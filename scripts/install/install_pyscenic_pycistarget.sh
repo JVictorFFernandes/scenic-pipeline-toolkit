@@ -12,10 +12,10 @@
 # environment (they don't use pycistarget).
 #
 # Usage:
-#   bash install/install_pyscenic_pycistarget.sh
+#   bash scripts/install/install_pyscenic_pycistarget.sh
 #
 # After running, validate with:
-#   bash install/verify_installation.sh
+#   bash scripts/install/verify_installation.sh
 #
 set -euo pipefail
 
@@ -219,4 +219,4 @@ echo "    conda activate $ENV_PYSCENIC       # to run the grn/ctx scripts"
 echo "    conda activate $ENV_PYCISTARGET    # to work with pycistarget"
 echo
 echo "To confirm everything is working, run:"
-echo "    bash install/verify_installation.sh"
+echo "    bash scripts/install/verify_installation.sh"

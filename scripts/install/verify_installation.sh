@@ -10,7 +10,7 @@
 # conflict).
 #
 # Usage:
-#   bash install/verify_installation.sh
+#   bash scripts/install/verify_installation.sh
 #
 ENV_PYSCENIC="scenic"
 ENV_PYCISTARGET="pycistarget"
@@ -41,7 +41,7 @@ if command -v conda >/dev/null 2>&1; then
 else
     fail "'conda' command not found on PATH"
     echo
-    echo "Summary: FAILED. Run install/install_pyscenic_pycistarget.sh first."
+    echo "Summary: FAILED. Run scripts/install/install_pyscenic_pycistarget.sh first."
     echo "If the installation already ran, close and reopen your terminal (or run"
     echo "'source ~/.bashrc') for the 'conda init' done by the installer to take effect."
     exit 1
