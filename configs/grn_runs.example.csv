@@ -1,0 +1,7 @@
+run_id,loom_path,tfs_path,output_path,num_workers,method,seed
+Hepg2_n37,data/Hepg2_GSM5677000_filtered_scenic.loom,downloads/hs_hgnc_tfs.txt,outs/adj_Hepg2_n37.tsv,6,grnboost2,1
+Hepg2_n38,data/Hepg2_GSM5677000_filtered_scenic.loom,downloads/hs_hgnc_tfs.txt,outs/adj_Hepg2_n38.tsv,6,grnboost2,2
+Hepg2_n39,data/Hepg2_GSM5677000_filtered_scenic.loom,downloads/hs_hgnc_tfs.txt,outs/adj_Hepg2_n39.tsv,6,grnboost2,3
+Hepg2_n40,data/Hepg2_GSM5677000_filtered_scenic.loom,downloads/hs_hgnc_tfs.txt,outs/adj_Hepg2_n40.tsv,6,grnboost2,4
+Hepg2_n41,data/Hepg2_GSM5677000_filtered_scenic.loom,downloads/hs_hgnc_tfs.txt,outs/adj_Hepg2_n41.tsv,6,grnboost2,5
+Hepg2_n42,data/Hepg2_GSM5677000_filtered_scenic.loom,downloads/hs_hgnc_tfs.txt,outs/adj_Hepg2_n42.tsv,6,grnboost2,6

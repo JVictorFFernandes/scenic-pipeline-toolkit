@@ -71,18 +71,46 @@ validate_csv_output() {
     return 0
 }
 
+# Lines matched here are dropped from the LIVE terminal stream only — the
+# full, unfiltered output always still goes to the log file. These are
+# warnings that pyscenic/ctxcore print identically on every single run
+# (dependency deprecation notices, a static note about correlation
+# calculation) and add nothing after you've seen them once, but get very
+# repetitive across many rows in a CSV.
+NOISY_LIVE_PATTERN='pkg_resources is deprecated|from pkg_resources import|Note on correlation calculation|Previously, the default was to calculate|current default is now to use all cells|The original settings can be retained|Dropout masking is currently set to'
+
 # run_and_log <log_file> -- <command...>
-# Runs the command, saves stdout+stderr to the log file, and returns the
-# command's exit code (deliberately not using 'set -e' here — the caller
-# decides what to do on failure).
+# Runs the command, saving stdout+stderr to the log file. By default also
+# streams live to the terminal (filtering out NOISY_LIVE_PATTERN from what's
+# shown live, not from the log file), and returns the command's exit code
+# (deliberately not using 'set -e' here — the caller decides what to do on
+# failure).
+#
+# Streaming live matters here: with --mode dask_multiprocessing, "pyscenic
+# ctx" already prints a real percentage progress bar (dask.diagnostics.
+# ProgressBar) to stdout, and "pyscenic grn" prints milestone messages
+# ("Loading expression matrix.", "Inferring regulatory networks.", ...) —
+# both were previously hidden until the run finished because output went
+# only to the log file.
+#
+# Set QUIET=1 (see --quiet in the calling scripts) to go back to the old
+# behavior: no live output at all, only the log file — useful for
+# unattended runs (nohup/cron) where nobody is watching the terminal.
 run_and_log() {
     local logfile="$1"; shift
     if [ "$1" == "--" ]; then shift; fi
     local start_ts end_ts
+    RUN_STARTED_AT=$(date -Iseconds)
     start_ts=$(date +%s)
-    "$@" > "$logfile" 2>&1
-    local rc=$?
+    if [ "${QUIET:-0}" -eq 1 ]; then
+        "$@" > "$logfile" 2>&1
+        local rc=$?
+    else
+        "$@" 2>&1 | tee "$logfile" | grep -Ev "$NOISY_LIVE_PATTERN"
+        local rc=${PIPESTATUS[0]}
+    fi
     end_ts=$(date +%s)
+    RUN_FINISHED_AT=$(date -Iseconds)
     RUN_ELAPSED_SECONDS=$(( end_ts - start_ts ))
     return $rc
 }
@@ -96,4 +124,47 @@ nproc_check() {
     if [ "$available" != "?" ] && [ "$requested" -gt "$available" ]; then
         log_warn "num_workers=$requested is higher than the $available cores available on this machine"
     fi
+}
+
+# file_size_bytes <path>
+# Prints the file size in bytes, or 0 if the file doesn't exist. Used for
+# the lightweight telemetry in the summary CSVs and per-run metadata JSON.
+file_size_bytes() {
+    local path="$1"
+    if [ -f "$path" ]; then
+        stat -c%s "$path" 2>/dev/null || wc -c < "$path"
+    else
+        echo 0
+    fi
+}
+
+# json_escape <string>
+# Minimal JSON string escaping (backslashes and double quotes — enough for
+# the paths/hostnames/commands we actually put in the metadata files).
+json_escape() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    printf '%s' "$s"
+}
+
+# write_run_metadata_json <json_path> <key1> <value1> [<key2> <value2> ...]
+# Writes a small JSON object of run metadata (parameters, timestamps,
+# output size, etc.) next to the log file, for later programmatic analysis
+# (e.g. aggregating stats across many replicates). Numeric-looking values
+# are written unquoted; everything else is quoted and escaped.
+write_run_metadata_json() {
+    local json_path="$1"; shift
+    local out="{" first=1
+    while [ "$#" -ge 2 ]; do
+        local key="$1" value="$2"; shift 2
+        [ "$first" -eq 1 ] && first=0 || out+=","
+        if [[ "$value" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; then
+            out+="\"$key\":$value"
+        else
+            out+="\"$key\":\"$(json_escape "$value")\""
+        fi
+    done
+    out+="}"
+    printf '%s\n' "$out" > "$json_path"
 }

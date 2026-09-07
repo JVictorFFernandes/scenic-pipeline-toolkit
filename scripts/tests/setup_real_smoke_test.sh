@@ -64,8 +64,8 @@ python "$SCRIPT_DIR/make_smoke_test_loom.py" \
     --n-cells 150
 
 cat > configs/grn_smoke_test.csv <<EOF
-run_id,loom_path,tfs_path,output_path,num_workers,method
-smoke_test,data/smoke_test.loom,data/smoke_test_tfs.txt,outs/smoke_test/adj_smoke_test.tsv,4,grnboost2
+run_id,loom_path,tfs_path,output_path,num_workers,method,seed
+smoke_test,data/smoke_test.loom,data/smoke_test_tfs.txt,outs/smoke_test/adj_smoke_test.tsv,4,grnboost2,1
 EOF
 
 # nes_threshold set very low only for this mechanical test: since the

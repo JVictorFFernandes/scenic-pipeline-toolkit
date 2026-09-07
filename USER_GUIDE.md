@@ -1,0 +1,173 @@
+# User Guide
+
+A step-by-step walkthrough for setting up this toolkit on a brand-new
+Ubuntu machine and running your first `pyscenic grn` + `ctx` analysis, from
+zero. For a quick command reference once you're up and running, see the
+[README](README.md).
+
+## 0. Before you start
+
+You'll need:
+- A fresh Ubuntu (or Debian-based) machine or VM, with `sudo` access.
+- Your own data: an expression matrix (`.loom`), a TF list (`.txt`), and
+  cisTarget motif databases (`.feather` + `.tbl` files) for the TFs you
+  want to analyze.
+
+Don't have your own data yet? Skip to [step 7](#7-no-data-yet-try-the-smoke-test)
+to try the whole pipeline with small, official reference files first.
+
+## 1. Clone the repository
+
+```bash
+git clone <this-repo-url>
+cd scenic-pipeline-toolkit
+```
+
+## 2. Install pyscenic and pycistarget
+
+```bash
+bash scripts/install/install_pyscenic_pycistarget.sh
+```
+
+This takes a few minutes the first time (installs Conda/Mamba if missing,
+then two separate environments). It's safe to run again if it's
+interrupted — it picks up where it left off.
+
+Confirm it worked:
+
+```bash
+bash scripts/install/verify_installation.sh
+```
+
+You should see `Summary: ALL OK.` at the end. If not, the output tells you
+exactly which check failed — fix that before moving on.
+
+From now on, open a new terminal (or run `source ~/.bashrc`) and activate
+the environment before doing anything else:
+
+```bash
+conda activate scenic
+```
+
+## 3. Put your data somewhere the toolkit can find it
+
+Create a folder (any name, anywhere) and put these inside it:
+- Your `.loom` expression matrix.
+- Your TF list `.txt` file (filename must contain "tfs", e.g. `hs_hgnc_tfs.txt`).
+- One `.feather` + `.tbl` pair **per TF** you want to analyze (the two
+  filenames need to share the TF's name — see `--help` on the next step if
+  yours don't follow the default naming pattern).
+- *(Optional)* one extra, generic `.feather` + `.tbl` pair (not tied to any
+  single TF) if you also want a genome-wide baseline `ctx` run.
+
+Example layout:
+
+```
+my_data/
+├── my_expression.loom
+├── my_tfs.txt
+├── TF1.genes_vs_motifs.rankings.feather
+├── TF1.tbl
+├── TF2.genes_vs_motifs.rankings.feather
+└── TF2.tbl
+```
+
+## 4. Generate your run configuration
+
+This is the only "configuration" step — you never hand-write a CSV.
+
+```bash
+python scripts/generate_configs.py
+```
+
+Answer the prompts (press Enter to accept the default in `[brackets]`):
+
+```
+Folder with your data (loom, TF list, feather/tbl files): my_data
+Run ID (short name for this experiment, e.g. 'my_experiment'): my_first_run
+Number of grn replicates (grnboost2 is stochastic; run it several times for robustness) [1]:
+Number of workers [4]:
+NES threshold (used by ctx) [2.5]:
+Dask mode (used by ctx) [dask_multiprocessing]:
+GRN method (used by grn) [grnboost2]:
+Output folder [outs]:
+```
+
+For a first try, just accept every default (press Enter each time) except
+the data folder and run ID. At the end it prints what it found and where
+it wrote the config — something like:
+
+```
+Found loom:          my_data/my_expression.loom
+Found TF list:       my_data/my_tfs.txt
+Found 2 TF(s) with both feather+tbl: TF1, TF2
+Wrote configs/grn_runs.local.csv (1 row(s), seed=1..1 for reproducibility)
+Wrote configs/ctx_runs.local.csv (2 rows)
+```
+
+If it complains it can't find your loom/TF list/feather/tbl files, double
+check step 3 — the filenames need to follow the patterns described there.
+
+## 5. Run `grn`
+
+```bash
+bash scripts/run_pyscenic_grn.sh
+```
+
+You'll see `pyscenic`'s own progress live on screen. This is the slowest
+step — for a real dataset it can take from several minutes to hours,
+depending on your data size and machine. When it's done, you'll see a
+one-line summary per run and `[ OK ]` if everything went well.
+
+## 6. Run `ctx`
+
+```bash
+bash scripts/run_pyscenic_ctx.sh
+```
+
+Same idea — one run per TF (plus the baseline, if you have one). With the
+default settings you'll see a live `[####] | 42% Completed` progress bar
+for each.
+
+## 7. No data yet? Try the smoke test
+
+Before you have your own files, you can validate the whole install using
+small, official reference files instead:
+
+```bash
+bash scripts/tests/setup_real_smoke_test.sh
+bash scripts/run_pyscenic_grn.sh configs/grn_smoke_test.csv
+bash scripts/run_pyscenic_ctx.sh configs/ctx_smoke_test.csv
+```
+
+This downloads ~390MB the first time. It proves the pipeline runs
+correctly end to end — it won't produce biologically meaningful results
+(the expression data is random noise), just a working mechanical test.
+Once you have real data, go back to [step 3](#3-put-your-data-somewhere-the-toolkit-can-find-it).
+
+## 8. Where are my results?
+
+```
+outs/adj/<run_id>.tsv           one per grn run (the regulatory network)
+outs/regs/<run_id>/reg_*.csv    one per ctx run (the regulons)
+logs/<grn|ctx>_<run_id>.log     full output of that specific run
+logs/<grn|ctx>_summary_*.csv    one row per run: status, timing, output size
+logs/<grn|ctx>_<run_id>.meta.json   same info, structured, per run
+```
+
+## 9. Something failed — now what?
+
+Look at the `status` column in the summary table printed at the end (also
+saved to `logs/`). The [README](README.md#6-what-to-do-when-a-run-fails)
+explains what each status means and which log file to check.
+
+## 10. Ready to scale up?
+
+Once a small run works end to end, you can:
+- Point `--data-dir` at your real, full dataset.
+- Add `--replicates 30` (or however many) to run `grn` multiple times for a
+  robustness check — see the [README](README.md#2-configuring-a-run) for
+  what that changes.
+- Move to a proper server rather than a laptop — see the memory note in the
+  README's [Notes](README.md#notes) section; a real TF list and dataset can
+  need much more RAM than the quick tests above.
