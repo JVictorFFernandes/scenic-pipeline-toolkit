@@ -19,7 +19,7 @@ to try the whole pipeline with small, official reference files first.
 ## 1. Clone the repository
 
 ```bash
-git clone <this-repo-url>
+git clone https://github.com/PLeonLopes/scenic-pipeline-toolkit.git
 cd scenic-pipeline-toolkit
 ```
 
