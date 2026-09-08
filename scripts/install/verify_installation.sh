@@ -50,14 +50,22 @@ fi
 # shellcheck disable=SC1091
 source "$(conda info --base)/etc/profile.d/conda.sh"
 
+# install_pyscenic_pycistarget.sh creates environments by explicit prefix
+# under the base install's envs/ dir (not by name), specifically so a
+# pre-existing, customized envs_dirs config elsewhere on the machine can't
+# hide them. Check/activate the same way here, for the same reason.
+CONDA_BASE="$(conda info --base)"
+ENV_PYSCENIC_PREFIX="$CONDA_BASE/envs/$ENV_PYSCENIC"
+ENV_PYCISTARGET_PREFIX="$CONDA_BASE/envs/$ENV_PYCISTARGET"
+
 # ---------------------------------------------------------------------------
 # "$ENV_PYSCENIC" environment
 # ---------------------------------------------------------------------------
 echo
 echo "--- Environment '$ENV_PYSCENIC' (pyscenic grn/ctx) ---"
-if conda env list | grep -qE "^${ENV_PYSCENIC}\s"; then
-    pass "conda environment '$ENV_PYSCENIC' exists"
-    conda activate "$ENV_PYSCENIC"
+if [ -d "$ENV_PYSCENIC_PREFIX" ]; then
+    pass "conda environment '$ENV_PYSCENIC' exists ($ENV_PYSCENIC_PREFIX)"
+    conda activate "$ENV_PYSCENIC_PREFIX"
 
     if pyscenic --help >/dev/null 2>&1; then
         pass "'pyscenic' command works"
@@ -109,9 +117,9 @@ fi
 # ---------------------------------------------------------------------------
 echo
 echo "--- Environment '$ENV_PYCISTARGET' (pycistarget) ---"
-if conda env list | grep -qE "^${ENV_PYCISTARGET}\s"; then
-    pass "conda environment '$ENV_PYCISTARGET' exists"
-    conda activate "$ENV_PYCISTARGET"
+if [ -d "$ENV_PYCISTARGET_PREFIX" ]; then
+    pass "conda environment '$ENV_PYCISTARGET' exists ($ENV_PYCISTARGET_PREFIX)"
+    conda activate "$ENV_PYCISTARGET_PREFIX"
 
     if python -c "import pycistarget" >/dev/null 2>&1; then
         version=$(python -c "import pycistarget; print(getattr(pycistarget, '__version__', 'no __version__'))" 2>/dev/null)

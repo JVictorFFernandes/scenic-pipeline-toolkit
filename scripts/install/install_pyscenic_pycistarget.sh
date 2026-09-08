@@ -109,17 +109,30 @@ fi
 # shellcheck disable=SC1091
 source "$(conda info --base)/etc/profile.d/conda.sh"
 
+# Create/activate environments by an EXPLICIT prefix under the base
+# install's own envs/ dir, instead of by name (-n) — on a machine that
+# already has conda/mamba configured, a pre-existing .condarc/.mambarc can
+# set a custom (sometimes relative) `envs_dirs`, silently putting a
+# name-created env somewhere unexpected (e.g. under the current directory)
+# and making later name-based `conda activate` fail with
+# "EnvironmentNameNotFound" even though the env exists on disk. A prefix
+# under the base's own envs/ dir sidesteps that entirely, and is still the
+# same place `conda activate <name>` looks first by default afterwards.
+CONDA_BASE="$(conda info --base)"
+ENV_PYSCENIC_PREFIX="$CONDA_BASE/envs/$ENV_PYSCENIC"
+ENV_PYCISTARGET_PREFIX="$CONDA_BASE/envs/$ENV_PYCISTARGET"
+
 # ---------------------------------------------------------------------------
 # 3) Conda environment "$ENV_PYSCENIC" (pyscenic only — used by scripts/run_pyscenic_*.sh)
 # ---------------------------------------------------------------------------
 log "3/6 Conda environment '$ENV_PYSCENIC' (Python $PYTHON_VERSION_PYSCENIC)"
-if conda env list | grep -qE "^${ENV_PYSCENIC}\s"; then
-    echo "Environment '$ENV_PYSCENIC' already exists, skipping creation."
+if [ -d "$ENV_PYSCENIC_PREFIX" ]; then
+    echo "Environment '$ENV_PYSCENIC' already exists at $ENV_PYSCENIC_PREFIX, skipping creation."
 else
-    mamba create -n "$ENV_PYSCENIC" -y -c conda-forge "python=$PYTHON_VERSION_PYSCENIC" pip "$SETUPTOOLS_SPEC" wheel
+    mamba create -p "$ENV_PYSCENIC_PREFIX" -y -c conda-forge "python=$PYTHON_VERSION_PYSCENIC" pip "$SETUPTOOLS_SPEC" wheel
 fi
 
-conda activate "$ENV_PYSCENIC"
+conda activate "$ENV_PYSCENIC_PREFIX"
 
 # If pycistarget was installed by mistake in this environment on a previous
 # attempt, it already broke pyscenic's pandas/dask — detect and warn instead
@@ -130,7 +143,7 @@ if python -c "import pycistarget" >/dev/null 2>&1; then
     echo "which breaks pyscenic's dependencies (pandas version conflict)."
     echo "Run the following to fix it, then run this script again:"
     echo "    conda deactivate"
-    echo "    conda env remove -n $ENV_PYSCENIC -y"
+    echo "    conda env remove -p $ENV_PYSCENIC_PREFIX -y"
     exit 1
 fi
 
@@ -173,13 +186,13 @@ conda deactivate
 # 5) Conda environment "$ENV_PYCISTARGET" (separate, avoids dependency conflicts)
 # ---------------------------------------------------------------------------
 log "5/6 Conda environment '$ENV_PYCISTARGET' (Python $PYTHON_VERSION_PYCISTARGET)"
-if conda env list | grep -qE "^${ENV_PYCISTARGET}\s"; then
-    echo "Environment '$ENV_PYCISTARGET' already exists, skipping creation."
+if [ -d "$ENV_PYCISTARGET_PREFIX" ]; then
+    echo "Environment '$ENV_PYCISTARGET' already exists at $ENV_PYCISTARGET_PREFIX, skipping creation."
 else
-    mamba create -n "$ENV_PYCISTARGET" -y -c conda-forge "python=$PYTHON_VERSION_PYCISTARGET" pip "$SETUPTOOLS_SPEC" wheel
+    mamba create -p "$ENV_PYCISTARGET_PREFIX" -y -c conda-forge "python=$PYTHON_VERSION_PYCISTARGET" pip "$SETUPTOOLS_SPEC" wheel
 fi
 
-conda activate "$ENV_PYCISTARGET"
+conda activate "$ENV_PYCISTARGET_PREFIX"
 python -m pip install --upgrade pip "$SETUPTOOLS_SPEC" wheel
 
 if python -c "import pycistarget" >/dev/null 2>&1; then
@@ -199,7 +212,6 @@ conda deactivate
 # Silent-mode installers (-b) don't touch .bashrc. Without this, a new
 # terminal won't find the 'conda' command even though everything is
 # installed.
-CONDA_BASE="$(conda info --base)"
 if ! grep -q "conda initialize" "$HOME/.bashrc" 2>/dev/null; then
     log "6/6 Registering conda in ~/.bashrc (conda init bash)"
     "$CONDA_BASE/bin/conda" init bash
