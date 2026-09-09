@@ -6,7 +6,7 @@
 # Usage:
 #   bash scripts/run_pyscenic_ctx.sh [config.csv] [--dry-run] [--force] [--quiet]
 #
-#   config.csv   path to the CSV (default: configs/ctx_runs.local.csv — generate it
+#   config.csv   path to the CSV (default: artifacts/ctx_runs.local.csv — generate it
 #                with scripts/generate_configs.py, don't hand-write it)
 #   --dry-run    only validate paths and print the command, without calling pyscenic
 #   --force      reprocess runs even if output_path already exists
@@ -21,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/common.sh"
 
-CONFIG_CSV="configs/ctx_runs.local.csv"
+CONFIG_CSV="artifacts/ctx_runs.local.csv"
 DRY_RUN=0
 FORCE=0
 QUIET=0
@@ -41,10 +41,23 @@ if [ ! -f "$CONFIG_CSV" ]; then
     exit 2
 fi
 
-mkdir -p logs
+# generate_configs.py writes CSVs into .../<project>/<cell-line>/configs/;
+# logs go into .../<project>/<cell-line>/logs/, a sibling of that configs/
+# folder (not one global logs/) — so everything about one project/cell-line
+# (its configs, its outputs, and what happened when it ran) stays together.
+# A CSV that isn't inside a configs/ folder (e.g. artifacts/examples/*.csv,
+# the smoke test) falls back to a logs/ folder right next to it instead.
+CSV_DIR="$(dirname "$CONFIG_CSV")"
+if [ "$(basename "$CSV_DIR")" = "configs" ]; then
+    ARTIFACT_DIR="$(dirname "$CSV_DIR")"
+else
+    ARTIFACT_DIR="$CSV_DIR"
+fi
+LOGS_DIR="$ARTIFACT_DIR/logs"
+mkdir -p "$LOGS_DIR"
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-SUMMARY_CSV="logs/ctx_summary_${TIMESTAMP}.csv"
+SUMMARY_CSV="$LOGS_DIR/ctx_summary_${TIMESTAMP}.csv"
 echo "run_id,tf_name,status,n_regulons,elapsed_seconds,output_size_bytes,num_workers,nes_threshold,mode,started_at,finished_at,log_file" > "$SUMMARY_CSV"
 
 # Total data rows, for the "[i/N]" progress indicator below.
@@ -64,8 +77,8 @@ while IFS=',' read -r run_id tf_name adj_path feather_path tbl_path loom_path ne
     echo
     log_info "=== [$((ROW_NUM - 1))/$TOTAL_ROWS] [$run_id] Running $tf_name ==="
 
-    LOGFILE="logs/ctx_${run_id}.log"
-    METAFILE="logs/ctx_${run_id}.meta.json"
+    LOGFILE="$LOGS_DIR/ctx_${run_id}.log"
+    METAFILE="$LOGS_DIR/ctx_${run_id}.meta.json"
     STATUS=""
     NREGULONS=""
     RUN_ELAPSED_SECONDS=0
@@ -140,7 +153,7 @@ log_info "Summary saved to: $SUMMARY_CSV"
 column -s, -t "$SUMMARY_CSV" 2>/dev/null || cat "$SUMMARY_CSV"
 
 if [ "$ANY_FAILED" -eq 1 ]; then
-    log_error "One or more runs failed. Check the 'status' column in the summary and the logs in logs/."
+    log_error "One or more runs failed. Check the 'status' column in the summary and the logs in $LOGS_DIR/."
     exit 1
 fi
 

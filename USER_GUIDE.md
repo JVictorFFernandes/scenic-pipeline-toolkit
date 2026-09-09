@@ -84,34 +84,50 @@ Answer the prompts (press Enter to accept the default in `[brackets]`):
 
 ```
 Folder with your data (loom, TF list, feather/tbl files): my_data
+Project name (groups related runs under artifacts/<project>/, e.g. 'canonical_tfs'): my_project
+Cell line (optional, e.g. 'HepG2'): HepG2
 Run ID (short name for this experiment, e.g. 'my_experiment'): my_first_run
 Number of grn replicates (grnboost2 is stochastic; run it several times for robustness) [1]:
 Number of workers [4]:
 NES threshold (used by ctx) [2.5]:
 Dask mode (used by ctx) [dask_multiprocessing]:
 GRN method (used by grn) [grnboost2]:
-Output folder [outs]:
+Output folder [artifacts/my_project/hepg2/outs]:
 ```
 
 For a first try, just accept every default (press Enter each time) except
-the data folder and run ID. At the end it prints what it found and where
-it wrote the config — something like:
+the data folder, project name, and run ID. At the end it prints what it
+found and where it wrote the config — something like:
 
 ```
 Found loom:          my_data/my_expression.loom
 Found TF list:       my_data/my_tfs.txt
 Found 2 TF(s) with both feather+tbl: TF1, TF2
-Wrote configs/grn_runs.local.csv (1 row(s), seed=1..1 for reproducibility)
-Wrote configs/ctx_runs.local.csv (2 rows)
+Artifact folder:     artifacts/my_project/HepG2
+Wrote artifacts/my_project/HepG2/configs/grn_runs_2026-01-01_10-30-00.local.csv (1 row(s), seed=1..1 for reproducibility)
+Wrote artifacts/my_project/HepG2/configs/ctx_runs_2026-01-01_10-30-00.local.csv (2 rows)
 ```
+
+`artifacts/<project>/[<cell-line>/]configs/` is a **stable** folder — every
+time you run this, it adds a **new, timestamped file pair** there instead of
+overwriting the previous one, so you can always look back at exactly what
+config produced a given result. `logs/` and `outs/`, siblings of that
+`configs/` folder, are where that project's logs and pyscenic outputs will
+land once you run `grn`/`ctx` (see [step 8](#8-where-are-my-results)) —
+everything about one project stays together. Use
+`--project`/`--cell-line`/`--run-id` (and skip the prompts entirely) to
+script this — see the [README](README.md#2-configuring-a-run).
 
 If it complains it can't find your loom/TF list/feather/tbl files, double
 check step 3 — the filenames need to follow the patterns described there.
 
 ## 5. Run `grn`
 
+Step 4 printed the exact commands to run, under "Next steps" — copy the
+first one, it looks like:
+
 ```bash
-bash scripts/run_pyscenic_grn.sh
+bash scripts/run_pyscenic_grn.sh artifacts/my_project/HepG2/configs/grn_runs_2026-01-01_10-30-00.local.csv
 ```
 
 You'll see `pyscenic`'s own progress live on screen. This is the slowest
@@ -121,13 +137,14 @@ one-line summary per run and `[ OK ]` if everything went well.
 
 ## 6. Run `ctx`
 
+Same idea, with the second command from step 4's "Next steps":
+
 ```bash
-bash scripts/run_pyscenic_ctx.sh
+bash scripts/run_pyscenic_ctx.sh artifacts/my_project/HepG2/configs/ctx_runs_2026-01-01_10-30-00.local.csv
 ```
 
-Same idea — one run per TF (plus the baseline, if you have one). With the
-default settings you'll see a live `[####] | 42% Completed` progress bar
-for each.
+One run per TF (plus the baseline, if you have one). With the default
+settings you'll see a live `[####] | 42% Completed` progress bar for each.
 
 ## 7. No data yet? Try the smoke test
 
@@ -136,8 +153,8 @@ small, official reference files instead:
 
 ```bash
 bash scripts/tests/setup_real_smoke_test.sh
-bash scripts/run_pyscenic_grn.sh configs/grn_smoke_test.csv
-bash scripts/run_pyscenic_ctx.sh configs/ctx_smoke_test.csv
+bash scripts/run_pyscenic_grn.sh artifacts/examples/grn_smoke_test.csv
+bash scripts/run_pyscenic_ctx.sh artifacts/examples/ctx_smoke_test.csv
 ```
 
 This downloads ~390MB the first time. It proves the pipeline runs
@@ -147,18 +164,34 @@ Once you have real data, go back to [step 3](#3-put-your-data-somewhere-the-tool
 
 ## 8. Where are my results?
 
+Everything about one project/cell-line — the config you generated, what
+happened when you ran it, and the results themselves — lives together
+under one `artifacts/<project>/[<cell-line>/]` folder, split into three
+sibling subfolders:
+
 ```
-outs/adj/<run_id>.tsv           one per grn run (the regulatory network)
-outs/regs/<run_id>/reg_*.csv    one per ctx run (the regulons)
-logs/<grn|ctx>_<run_id>.log     full output of that specific run
-logs/<grn|ctx>_summary_*.csv    one row per run: status, timing, output size
-logs/<grn|ctx>_<run_id>.meta.json   same info, structured, per run
+artifacts/my_project/hepg2/configs/grn_runs_*.local.csv           the config you generated (step 4)
+artifacts/my_project/hepg2/configs/ctx_runs_*.local.csv
+
+artifacts/my_project/hepg2/outs/adj/<run_id>.tsv                  one per grn run (the regulatory network)
+artifacts/my_project/hepg2/outs/regs/<run_id>/reg_*.csv           one per ctx run (the regulons)
+
+artifacts/my_project/hepg2/logs/<grn|ctx>_<run_id>.log            full output of that specific run
+artifacts/my_project/hepg2/logs/<grn|ctx>_summary_*.csv           one row per run: status, timing, output size
+artifacts/my_project/hepg2/logs/<grn|ctx>_<run_id>.meta.json      same info, structured, per run
 ```
+
+Nothing lives in a separate global `outs/` or `logs/` folder — so opening
+one project/cell-line folder shows you everything about it: what you
+*asked for* (`configs/`), what *happened* (`logs/`), and what *came out*
+(`outs/`).
 
 ## 9. Something failed — now what?
 
 Look at the `status` column in the summary table printed at the end (also
-saved to `logs/`). The [README](README.md#6-what-to-do-when-a-run-fails)
+saved to the `logs/` folder next to the config you ran — see
+[step 8](#8-where-are-my-results)). The
+[README](README.md#6-what-to-do-when-a-run-fails)
 explains what each status means and which log file to check.
 
 ## 10. Ready to scale up?

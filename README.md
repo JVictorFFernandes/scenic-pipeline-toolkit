@@ -40,7 +40,7 @@ flowchart LR
         Ctx["run_pyscenic_ctx.sh"]
     end
 
-    subgraph S5["Outputs & Logs"]
+    subgraph S5["artifacts/&lt;project&gt;/ — outputs & logs"]
         direction LR
         Adj(["outs/adj/*.tsv"])
         Regulons(["outs/regs/*/*.csv"])
@@ -97,7 +97,7 @@ don't hand-edit them.
 
 ```bash
 python scripts/generate_configs.py   # interactive prompts
-python scripts/generate_configs.py --data-dir my_data --run-id my_experiment --replicates 30   # scripted
+python scripts/generate_configs.py --data-dir my_data --project my_project --cell-line HepG2 --run-id my_experiment --replicates 30   # scripted
 ```
 
 | Finds in data folder            | Used for                        |
@@ -107,9 +107,31 @@ python scripts/generate_configs.py --data-dir my_data --run-id my_experiment --r
 | `.feather`+`.tbl` pairs per TF   | one `ctx` run per TF              |
 | one extra generic pair (optional)| baseline `ctx` run (`--no-baseline` to skip) |
 
-Writes `configs/grn_runs.local.csv` + `configs/ctx_runs.local.csv`
-(gitignored). `configs/*.example.csv` are the
-tracked, safe templates.
+Each run adds a new, timestamped **file pair** to a stable `configs/`
+folder — nothing is ever overwritten, so it builds up a full audit trail.
+`logs/` and `outs/` are siblings of that `configs/` folder, so everything
+about one project/cell-line lives together under one `artifacts/<project>/`
+folder:
+
+```
+artifacts/<project>/[<cell-line>/]configs/grn_runs_<timestamp>.local.csv
+artifacts/<project>/[<cell-line>/]configs/ctx_runs_<timestamp>.local.csv
+artifacts/<project>/[<cell-line>/]logs/...          (written when you run grn/ctx)
+artifacts/<project>/[<cell-line>/]outs/adj/...      (written by grn)
+artifacts/<project>/[<cell-line>/]outs/regs/...     (written by ctx)
+```
+
+`--project` groups related runs together (e.g. all canonical-TF work);
+`--cell-line` is optional, one more level of grouping (e.g. `HepG2`,
+`K562`) — both are case-insensitive (`HepG2`/`hepg2`/`HEPG2` all resolve to
+the same folder). This whole tree is gitignored (`artifacts/`) — it holds
+real, machine-specific paths and run outputs. `artifacts/examples/*.example.csv`
+is a separate, tracked set of templates for the smoke test, unrelated to
+this per-project `artifacts/.../configs/` folder.
+
+Results (`--outs-dir`, default the sibling `outs/` folder described above)
+and this run's logs (written by `grn`/`ctx` into the sibling `logs/`
+folder) follow this layout — see [Telemetry](#telemetry).
 
 `--replicates N` runs `grn` independently N times, each crossed with every
 TF for `ctx` — meant for a real server, not a laptop (see [Notes](#notes)).
@@ -124,10 +146,10 @@ Other flags (`--nes-threshold`, `--mode`, `--outs-dir`, `--loom`/`--tfs`,
 bash scripts/run_pyscenic_grn.sh [config.csv]
 ```
 
-Streams `pyscenic`'s output live (also saved in full to
-`logs/grn_<run_id>.log`), then prints a summary table saved to
-`logs/grn_summary_<date>.csv` — one row per run, with status, edge count,
-elapsed time, output size, and the parameters used (see [Telemetry](#telemetry) below).
+Streams `pyscenic`'s output live (also saved in full to a `.log` file
+next to the config CSV — see [Telemetry](#telemetry)), then prints a
+summary table with status, edge count, elapsed time, output size, and the
+parameters used.
 
 ## 4. Running `pyscenic ctx`
 
@@ -141,10 +163,21 @@ bar, plus a `[i/N]` counter across rows in the CSV.
 
 ## Telemetry
 
-Every run of `grn`/`ctx` writes two things beyond the log: a row in the
-summary CSV (`elapsed_seconds`, `output_size_bytes`, the parameters used,
-`started_at`/`finished_at`) and a `logs/<grn|ctx>_<run_id>.meta.json`
-sidecar with the same information plus the exact command, hostname, and
+`grn`/`ctx` write their logs into a `logs/` folder that's a **sibling of the
+`configs/` folder holding the CSV you ran** — e.g.
+`artifacts/<project>/[<cell-line>/]logs/` — instead of one global folder, so
+a project's configs, outputs, and everything that happened when it ran stay
+together:
+
+```
+artifacts/<project>/[<cell-line>/]logs/<grn|ctx>_<run_id>.log
+artifacts/<project>/[<cell-line>/]logs/<grn|ctx>_summary_<date>.csv
+artifacts/<project>/[<cell-line>/]logs/<grn|ctx>_<run_id>.meta.json
+```
+
+The summary CSV has one row per run (`elapsed_seconds`, `output_size_bytes`,
+the parameters used, `started_at`/`finished_at`); the `.meta.json` sidecar
+has the same information plus the exact command, hostname, and
 edge/regulon count — handy for aggregating stats across many replicates
 without re-parsing logs:
 
@@ -152,8 +185,12 @@ without re-parsing logs:
 {"run_id": "my_experiment", "status": "OK", "command": "pyscenic grn ...",
  "n_edges": 2495, "output_size_bytes": 79667, "elapsed_seconds": 12,
  "started_at": "2026-01-01T10:00:00-03:00", "finished_at": "2026-01-01T10:00:12-03:00",
- "hostname": "my-server", "log_file": "logs/grn_my_experiment.log", "...": "..."}
+ "hostname": "my-server", "log_file": "artifacts/my_project/logs/grn_my_experiment.log", "...": "..."}
 ```
+
+Results themselves follow the same project/cell-line layout by default:
+`artifacts/<project>/[<cell-line>/]outs/adj/...` and `.../outs/regs/...` —
+see [section 2](#2-configuring-a-run).
 
 ## 5. Flags
 
@@ -175,11 +212,12 @@ empty.
 | `OK`          | Ran and the output passed validation.                                |
 | `SKIPPED`     | Output already existed, wasn't redone.                                |
 | `FAIL_INPUT`  | An input file in the CSV doesn't exist or is empty.                  |
-| `FAIL_RUN`    | `pyscenic` exited with an error — see the log in `logs/`.             |
+| `FAIL_RUN`    | `pyscenic` exited with an error — see the log next to the config.    |
 | `FAIL_OUTPUT` | It ran, but the output was empty or missing expected columns.        |
 
-For any `FAIL_*`, check `logs/grn_<run_id>.log` or `logs/ctx_<run_id>.log`
-for the full `pyscenic` stdout/stderr.
+For any `FAIL_*`, check `<grn|ctx>_<run_id>.log` in the `logs/` folder next
+to the config CSV you ran (see [Telemetry](#telemetry)) for the full
+`pyscenic` stdout/stderr.
 
 ## 7. Smoke test with real AERTSLAB files (optional)
 
@@ -190,8 +228,8 @@ dataset built from real genes/TFs — useful before you have your own data.
 ```bash
 conda activate scenic
 bash scripts/tests/setup_real_smoke_test.sh
-bash scripts/run_pyscenic_grn.sh configs/grn_smoke_test.csv
-bash scripts/run_pyscenic_ctx.sh configs/ctx_smoke_test.csv
+bash scripts/run_pyscenic_grn.sh artifacts/examples/grn_smoke_test.csv
+bash scripts/run_pyscenic_ctx.sh artifacts/examples/ctx_smoke_test.csv
 ```
 
 Downloads ~390MB on first run. The expression is random noise, so this
@@ -210,14 +248,14 @@ automatically when the run finishes.
 ## Project structure
 
 ```
-scripts/install/       installation scripts (pyscenic + pycistarget)
-scripts/                generic grn/ctx scripts + generate_configs.py + lib/common.sh
-scripts/tests/          smoke-test-only scripts (not part of a real run)
-configs/                per-run configuration CSVs (see section 2)
-references/             original single-purpose bash scripts this toolkit
-                        generalizes — not meant to be run, kept for context
-data/, downloads/       input data (not versioned, see .gitignore)
-outs/, logs/            run outputs and logs (not versioned)
+scripts/install/                     installation scripts (pyscenic + pycistarget)
+scripts/                              generic grn/ctx scripts + generate_configs.py + lib/common.sh
+scripts/tests/                        smoke-test-only scripts (not part of a real run)
+artifacts/examples/                   tracked example/smoke-test CSVs (see section 7) — gitignore exception
+artifacts/<project>/[<cell-line>/]    real run configs/, logs/, and outs/, all together (not versioned)
+references/                           original single-purpose bash scripts this toolkit
+                                      generalizes — not meant to be run, kept for context
+data/, downloads/                     input data (not versioned, see .gitignore)
 ```
 
 ## Notes
