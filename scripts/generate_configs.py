@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-Writes configs/grn_runs.local.csv and configs/ctx_runs.local.csv
-automatically, instead of hand-writing CSV rows for every TF.
+Writes the grn/ctx run CSVs automatically, instead of hand-writing rows
+for every TF.
 
 Run once per experiment/data drop. Two ways to use it:
 
@@ -13,7 +13,7 @@ Run once per experiment/data drop. Two ways to use it:
   Non-interactive (pass --data-dir) — for scripting/automation/repeat runs,
   skips all prompts:
 
-    python scripts/generate_configs.py --data-dir my_data --run-id my_experiment --num-workers 4
+    python scripts/generate_configs.py --data-dir my_data --project my_project --run-id my_experiment --num-workers 4
 
 What it looks for inside the data folder (recursively):
   - one .loom file                          -> expression matrix
@@ -35,20 +35,59 @@ has no fixed random seed, so each run naturally differs) and cross each
 replicate's adjacency with every TF for ctx — e.g. --replicates 30 with 14
 TFs writes 30 grn rows and 30*14=420 ctx rows.
 
-The generated *.local.csv files are the ones scripts/run_pyscenic_grn.sh and
-scripts/run_pyscenic_ctx.sh use by default, and are gitignored — they hold
-real, machine-specific paths and are never meant to be committed. The
-*.example.csv files in configs/ are the tracked, safe-to-share templates.
+Every run of this script writes a new, timestamped pair of files into a
+stable folder — nothing is ever overwritten, so the full history of every
+config you've generated stays on disk for auditing:
+
+    configs/<project>/[<cell-line>/]grn_runs_<timestamp>.local.csv
+    configs/<project>/[<cell-line>/]ctx_runs_<timestamp>.local.csv
+
+--project groups related runs together (e.g. all canonical-TF work);
+--cell-line is optional and adds one more level of grouping (e.g. 'HepG2',
+'K562'). These generated *.local.csv files are the ones
+scripts/run_pyscenic_grn.sh and scripts/run_pyscenic_ctx.sh take as an
+argument, and the whole configs/<project>/ tree is gitignored — it holds
+real, machine-specific paths and is never meant to be committed. The
+configs/examples/*.example.csv files are the tracked, safe-to-share
+templates.
 """
 import argparse
 import csv
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 
 DEFAULT_FEATHER_REGEX = r"motifs_plus_([A-Za-z0-9]+)\.genes_vs_motifs\.rankings\.feather$"
 DEFAULT_TBL_REGEX = r"pptf_([A-Za-z0-9]+)\.tbl$"
 DEFAULT_TFS_GLOB = "*tfs*.txt"
+# Readable, still-sortable timestamp for filenames, e.g. 2026-09-08_21-02-00.
+TIMESTAMP_FORMAT = "%Y-%m-%d_%H-%M-%S"
+
+
+def slugify(value: str) -> str:
+    """Makes a string safe to use as a single path component, and
+    normalizes case — used for --project/--cell-line specifically so
+    'HepG2', 'hepg2', and 'HEPG2' all land in the exact same folder instead
+    of silently creating three different ones."""
+    return re.sub(r"[^A-Za-z0-9_-]+", "_", value.strip()).strip("_").lower()
+
+
+def config_dir_for(project: str, cell_line: str | None) -> Path:
+    """The stable folder a project's (optionally, one cell line's) configs
+    all live in: configs/<project>/[<cell-line>/]. Repeated runs add new
+    timestamped files here rather than new folders."""
+    parts = [Path("configs"), slugify(project)]
+    if cell_line:
+        parts.append(slugify(cell_line))
+    return Path(*parts)
+
+
+def config_filenames(when: datetime | None = None) -> tuple[str, str]:
+    """(grn_filename, ctx_filename) for a run happening at `when` (default:
+    now) — e.g. ('grn_runs_2026-09-08_21-02-00.local.csv', 'ctx_runs_...')."""
+    timestamp = (when or datetime.now()).strftime(TIMESTAMP_FORMAT)
+    return f"grn_runs_{timestamp}.local.csv", f"ctx_runs_{timestamp}.local.csv"
 
 
 def ask(question: str, default: str | None = None, validate=None) -> str:
@@ -79,6 +118,8 @@ def run_interactive() -> argparse.Namespace:
         "Folder with your data (loom, TF list, feather/tbl files)",
         validate=lambda v: None if Path(v).is_dir() else f"'{v}' is not a directory, try again.",
     )
+    project = ask("Project name (groups related runs under configs/<project>/, e.g. 'canonical_tfs')")
+    cell_line = input("Cell line (optional, e.g. 'HepG2'): ").strip() or None
     run_id = ask("Run ID (short name for this experiment, e.g. 'my_experiment')")
     replicates = ask(
         "Number of grn replicates (grnboost2 is stochastic; run it several times for robustness)",
@@ -97,6 +138,8 @@ def run_interactive() -> argparse.Namespace:
 
     return argparse.Namespace(
         data_dir=data_dir,
+        project=project,
+        cell_line=cell_line,
         run_id=run_id,
         replicates=int(replicates),
         no_seed=False,
@@ -112,8 +155,8 @@ def run_interactive() -> argparse.Namespace:
         no_baseline=False,
         feather_regex=DEFAULT_FEATHER_REGEX,
         tbl_regex=DEFAULT_TBL_REGEX,
-        grn_csv="configs/grn_runs.local.csv",
-        ctx_csv="configs/ctx_runs.local.csv",
+        grn_csv=None,
+        ctx_csv=None,
     )
 
 
@@ -180,6 +223,12 @@ def parse_args() -> argparse.Namespace:
         help="folder to scan for loom/TF-list/feather/tbl files. "
         "Omit this (and every other flag) to be prompted interactively instead.",
     )
+    parser.add_argument(
+        "--project",
+        help="groups related runs under configs/<project>/ (e.g. 'canonical_tfs'). "
+        "Required alongside --data-dir in non-interactive mode.",
+    )
+    parser.add_argument("--cell-line", help="optional, e.g. 'HepG2' — included in the run folder name")
     parser.add_argument("--run-id", help="short name for this experiment, e.g. 'my_experiment'")
     parser.add_argument(
         "--replicates",
@@ -218,16 +267,19 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_TBL_REGEX,
         help=rf"regex with one capture group for the TF name, applied to .tbl filenames (default: {DEFAULT_TBL_REGEX!r})",
     )
-    parser.add_argument("--grn-csv", default="configs/grn_runs.local.csv", help="output path for the grn CSV")
-    parser.add_argument("--ctx-csv", default="configs/ctx_runs.local.csv", help="output path for the ctx CSV")
+    parser.add_argument("--grn-csv", help="override: exact output path for the grn CSV (skip the configs/<project>/<timestamp>/ layout)")
+    parser.add_argument("--ctx-csv", help="override: exact output path for the ctx CSV (skip the configs/<project>/<timestamp>/ layout)")
     args = parser.parse_args()
 
     if args.data_dir is None:
         if not sys.stdin.isatty():
             parser.error("--data-dir is required when not running in an interactive terminal.")
         args = run_interactive()
-    elif args.run_id is None:
-        parser.error("--run-id is required (or omit --data-dir too, to use interactive mode).")
+    else:
+        if args.run_id is None:
+            parser.error("--run-id is required (or omit --data-dir too, to use interactive mode).")
+        if args.project is None:
+            parser.error("--project is required (or omit --data-dir too, to use interactive mode).")
 
     if args.replicates < 1:
         parser.error("--replicates must be a positive integer.")
@@ -291,7 +343,20 @@ def main():
     if args.replicates > 1:
         print(f"Generating {args.replicates} grn replicate(s): {', '.join(rep_ids)}")
 
-    grn_csv_path = Path(args.grn_csv)
+    # Every run adds a new timestamped file pair to a stable per-project
+    # (optionally per-cell-line) folder — nothing is overwritten, so
+    # configs/<project>/ builds up a full, auditable history over time.
+    # --grn-csv/--ctx-csv (if given) override this entirely, for edge cases.
+    if args.project:
+        config_dir = config_dir_for(args.project, args.cell_line)
+        grn_filename, ctx_filename = config_filenames()
+        grn_csv_path = Path(args.grn_csv) if args.grn_csv else config_dir / grn_filename
+        ctx_csv_path = Path(args.ctx_csv) if args.ctx_csv else config_dir / ctx_filename
+        print(f"Config folder:       {config_dir}")
+    else:
+        grn_csv_path = Path(args.grn_csv)
+        ctx_csv_path = Path(args.ctx_csv)
+
     grn_csv_path.parent.mkdir(parents=True, exist_ok=True)
     with open(grn_csv_path, "w", newline="") as fh:
         writer = csv.writer(fh)
@@ -305,7 +370,6 @@ def main():
     else:
         print(f"Wrote {grn_csv_path} ({len(rep_ids)} row(s), seed=1..{len(rep_ids)} for reproducibility)")
 
-    ctx_csv_path = Path(args.ctx_csv)
     ctx_csv_path.parent.mkdir(parents=True, exist_ok=True)
     n_ctx_rows = 0
     with open(ctx_csv_path, "w", newline="") as fh:
