@@ -1,2 +1,2 @@
 run_id,tf_name,adj_path,feather_path,tbl_path,loom_path,nes_threshold,mode,num_workers,output_path
-smoke_test,ALL,outs/smoke_test/adj_smoke_test.tsv,downloads/cistarget/hg38_10kbp_up_10kbp_down_full_tx_v10_clust.genes_vs_motifs.rankings.feather,downloads/cistarget/motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl,data/smoke_test.loom,0.0,dask_multiprocessing,4,outs/smoke_test/reg_smoke_test.csv
+smoke_test,ALL,artifacts/examples/outs/smoke_test/adj_smoke_test.tsv,downloads/cistarget/hg38_10kbp_up_10kbp_down_full_tx_v10_clust.genes_vs_motifs.rankings.feather,downloads/cistarget/motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl,data/smoke_test.loom,0.0,dask_multiprocessing,4,artifacts/examples/outs/smoke_test/reg_smoke_test.csv
