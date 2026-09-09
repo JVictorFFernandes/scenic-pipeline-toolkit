@@ -84,6 +84,8 @@ Answer the prompts (press Enter to accept the default in `[brackets]`):
 
 ```
 Folder with your data (loom, TF list, feather/tbl files): my_data
+Project name (groups related runs under configs/<project>/, e.g. 'canonical_tfs'): my_project
+Cell line (optional, e.g. 'HepG2'): HepG2
 Run ID (short name for this experiment, e.g. 'my_experiment'): my_first_run
 Number of grn replicates (grnboost2 is stochastic; run it several times for robustness) [1]:
 Number of workers [4]:
@@ -94,24 +96,35 @@ Output folder [outs]:
 ```
 
 For a first try, just accept every default (press Enter each time) except
-the data folder and run ID. At the end it prints what it found and where
-it wrote the config — something like:
+the data folder, project name, and run ID. At the end it prints what it
+found and where it wrote the config — something like:
 
 ```
 Found loom:          my_data/my_expression.loom
 Found TF list:       my_data/my_tfs.txt
 Found 2 TF(s) with both feather+tbl: TF1, TF2
-Wrote configs/grn_runs.local.csv (1 row(s), seed=1..1 for reproducibility)
-Wrote configs/ctx_runs.local.csv (2 rows)
+Config folder:       configs/my_project/HepG2
+Wrote configs/my_project/HepG2/grn_runs_2026-01-01_10-30-00.local.csv (1 row(s), seed=1..1 for reproducibility)
+Wrote configs/my_project/HepG2/ctx_runs_2026-01-01_10-30-00.local.csv (2 rows)
 ```
+
+`configs/<project>/[<cell-line>/]` is a **stable** folder — every time you
+run this, it adds a **new, timestamped file pair** there instead of
+overwriting the previous one, so you can always look back at exactly what
+config produced a given result. Use `--project`/`--cell-line`/`--run-id`
+(and skip the prompts entirely) to script this — see the
+[README](README.md#2-configuring-a-run).
 
 If it complains it can't find your loom/TF list/feather/tbl files, double
 check step 3 — the filenames need to follow the patterns described there.
 
 ## 5. Run `grn`
 
+Step 4 printed the exact commands to run, under "Next steps" — copy the
+first one, it looks like:
+
 ```bash
-bash scripts/run_pyscenic_grn.sh
+bash scripts/run_pyscenic_grn.sh configs/my_project/HepG2/grn_runs_2026-01-01_10-30-00.local.csv
 ```
 
 You'll see `pyscenic`'s own progress live on screen. This is the slowest
@@ -121,13 +134,14 @@ one-line summary per run and `[ OK ]` if everything went well.
 
 ## 6. Run `ctx`
 
+Same idea, with the second command from step 4's "Next steps":
+
 ```bash
-bash scripts/run_pyscenic_ctx.sh
+bash scripts/run_pyscenic_ctx.sh configs/my_project/HepG2/ctx_runs_2026-01-01_10-30-00.local.csv
 ```
 
-Same idea — one run per TF (plus the baseline, if you have one). With the
-default settings you'll see a live `[####] | 42% Completed` progress bar
-for each.
+One run per TF (plus the baseline, if you have one). With the default
+settings you'll see a live `[####] | 42% Completed` progress bar for each.
 
 ## 7. No data yet? Try the smoke test
 
@@ -136,8 +150,8 @@ small, official reference files instead:
 
 ```bash
 bash scripts/tests/setup_real_smoke_test.sh
-bash scripts/run_pyscenic_grn.sh configs/grn_smoke_test.csv
-bash scripts/run_pyscenic_ctx.sh configs/ctx_smoke_test.csv
+bash scripts/run_pyscenic_grn.sh configs/examples/grn_smoke_test.csv
+bash scripts/run_pyscenic_ctx.sh configs/examples/ctx_smoke_test.csv
 ```
 
 This downloads ~390MB the first time. It proves the pipeline runs

@@ -97,7 +97,7 @@ don't hand-edit them.
 
 ```bash
 python scripts/generate_configs.py   # interactive prompts
-python scripts/generate_configs.py --data-dir my_data --run-id my_experiment --replicates 30   # scripted
+python scripts/generate_configs.py --data-dir my_data --project my_project --cell-line HepG2 --run-id my_experiment --replicates 30   # scripted
 ```
 
 | Finds in data folder            | Used for                        |
@@ -107,9 +107,19 @@ python scripts/generate_configs.py --data-dir my_data --run-id my_experiment --r
 | `.feather`+`.tbl` pairs per TF   | one `ctx` run per TF              |
 | one extra generic pair (optional)| baseline `ctx` run (`--no-baseline` to skip) |
 
-Writes `configs/grn_runs.local.csv` + `configs/ctx_runs.local.csv`
-(gitignored). `configs/*.example.csv` are the
-tracked, safe templates.
+Each run adds a new, timestamped **file pair** to a stable folder —
+nothing is ever overwritten, so it builds up a full audit trail:
+
+```
+configs/<project>/[<cell-line>/]grn_runs_<timestamp>.local.csv
+configs/<project>/[<cell-line>/]ctx_runs_<timestamp>.local.csv
+```
+
+`--project` groups related runs together (e.g. all canonical-TF work);
+`--cell-line` is optional, one more level of grouping (e.g. `HepG2`,
+`K562`). This whole tree is gitignored (`configs/**/*.local.csv`) —
+`configs/examples/*.example.csv` are the only tracked,
+safe templates.
 
 `--replicates N` runs `grn` independently N times, each crossed with every
 TF for `ctx` — meant for a real server, not a laptop (see [Notes](#notes)).
@@ -190,8 +200,8 @@ dataset built from real genes/TFs — useful before you have your own data.
 ```bash
 conda activate scenic
 bash scripts/tests/setup_real_smoke_test.sh
-bash scripts/run_pyscenic_grn.sh configs/grn_smoke_test.csv
-bash scripts/run_pyscenic_ctx.sh configs/ctx_smoke_test.csv
+bash scripts/run_pyscenic_grn.sh configs/examples/grn_smoke_test.csv
+bash scripts/run_pyscenic_ctx.sh configs/examples/ctx_smoke_test.csv
 ```
 
 Downloads ~390MB on first run. The expression is random noise, so this
