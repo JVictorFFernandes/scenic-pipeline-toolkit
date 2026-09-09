@@ -22,7 +22,7 @@ if ! python -c "import ctxcore" >/dev/null 2>&1; then
     exit 1
 fi
 
-mkdir -p downloads/cistarget data outs/smoke_test
+mkdir -p downloads/cistarget data artifacts/examples/outs/smoke_test
 
 FEATHER_URL="https://resources.aertslab.org/cistarget/databases/homo_sapiens/hg38/refseq_r80/mc_v10_clust/gene_based/hg38_10kbp_up_10kbp_down_full_tx_v10_clust.genes_vs_motifs.rankings.feather"
 TBL_URL="https://resources.aertslab.org/cistarget/motif2tf/motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl"
@@ -63,9 +63,9 @@ python "$SCRIPT_DIR/make_smoke_test_loom.py" \
     --n-tfs 30 \
     --n-cells 150
 
-cat > configs/examples/grn_smoke_test.csv <<EOF
+cat > artifacts/examples/grn_smoke_test.csv <<EOF
 run_id,loom_path,tfs_path,output_path,num_workers,method,seed
-smoke_test,data/smoke_test.loom,data/smoke_test_tfs.txt,outs/smoke_test/adj_smoke_test.tsv,4,grnboost2,1
+smoke_test,data/smoke_test.loom,data/smoke_test_tfs.txt,artifacts/examples/outs/smoke_test/adj_smoke_test.tsv,4,grnboost2,1
 EOF
 
 # nes_threshold set very low only for this mechanical test: since the
@@ -73,12 +73,12 @@ EOF
 # (2.5) of a real analysis. The goal here is to confirm the command runs and
 # writes output in the correct format with the official files, not to find
 # biologically valid regulons.
-cat > configs/examples/ctx_smoke_test.csv <<EOF
+cat > artifacts/examples/ctx_smoke_test.csv <<EOF
 run_id,tf_name,adj_path,feather_path,tbl_path,loom_path,nes_threshold,mode,num_workers,output_path
-smoke_test,ALL,outs/smoke_test/adj_smoke_test.tsv,$FEATHER_PATH,$TBL_PATH,data/smoke_test.loom,0.0,dask_multiprocessing,4,outs/smoke_test/reg_smoke_test.csv
+smoke_test,ALL,artifacts/examples/outs/smoke_test/adj_smoke_test.tsv,$FEATHER_PATH,$TBL_PATH,data/smoke_test.loom,0.0,dask_multiprocessing,4,artifacts/examples/outs/smoke_test/reg_smoke_test.csv
 EOF
 
 echo
 echo "Done. Now run, in this order:"
-echo "    bash scripts/run_pyscenic_grn.sh configs/examples/grn_smoke_test.csv"
-echo "    bash scripts/run_pyscenic_ctx.sh configs/examples/ctx_smoke_test.csv"
+echo "    bash scripts/run_pyscenic_grn.sh artifacts/examples/grn_smoke_test.csv"
+echo "    bash scripts/run_pyscenic_ctx.sh artifacts/examples/ctx_smoke_test.csv"
