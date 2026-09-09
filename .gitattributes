@@ -1,0 +1,11 @@
+# Force Unix line endings (LF) on all text files, regardless of the
+# contributor's OS/editor. Prevents a repeat of the CRLF bug from 8ae1c64.
+* text=auto eol=lf
+
+*.loom binary
+*.feather binary
+*.tbl binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary

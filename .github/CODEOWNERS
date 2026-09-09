@@ -1,0 +1,10 @@
+# Default owner for anything not matched below.
+*                       @PLeonLopes @irlvinicius @JVictorFFernandes
+
+# Pipeline scripts and their tests:
+/scripts/               @PLeonLopes @irlvinicius @JVictorFFernandes
+/scripts/tests/         @PLeonLopes @irlvinicius @JVictorFFernandes
+
+# Install scripts and CI/governance config:
+/scripts/install/       @PLeonLopes @irlvinicius
+/.github/               @PLeonLopes @irlvinicius
