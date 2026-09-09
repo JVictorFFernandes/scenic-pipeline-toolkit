@@ -63,7 +63,7 @@ python "$SCRIPT_DIR/make_smoke_test_loom.py" \
     --n-tfs 30 \
     --n-cells 150
 
-cat > configs/grn_smoke_test.csv <<EOF
+cat > configs/examples/grn_smoke_test.csv <<EOF
 run_id,loom_path,tfs_path,output_path,num_workers,method,seed
 smoke_test,data/smoke_test.loom,data/smoke_test_tfs.txt,outs/smoke_test/adj_smoke_test.tsv,4,grnboost2,1
 EOF
@@ -73,12 +73,12 @@ EOF
 # (2.5) of a real analysis. The goal here is to confirm the command runs and
 # writes output in the correct format with the official files, not to find
 # biologically valid regulons.
-cat > configs/ctx_smoke_test.csv <<EOF
+cat > configs/examples/ctx_smoke_test.csv <<EOF
 run_id,tf_name,adj_path,feather_path,tbl_path,loom_path,nes_threshold,mode,num_workers,output_path
 smoke_test,ALL,outs/smoke_test/adj_smoke_test.tsv,$FEATHER_PATH,$TBL_PATH,data/smoke_test.loom,0.0,dask_multiprocessing,4,outs/smoke_test/reg_smoke_test.csv
 EOF
 
 echo
 echo "Done. Now run, in this order:"
-echo "    bash scripts/run_pyscenic_grn.sh configs/grn_smoke_test.csv"
-echo "    bash scripts/run_pyscenic_ctx.sh configs/ctx_smoke_test.csv"
+echo "    bash scripts/run_pyscenic_grn.sh configs/examples/grn_smoke_test.csv"
+echo "    bash scripts/run_pyscenic_ctx.sh configs/examples/ctx_smoke_test.csv"
