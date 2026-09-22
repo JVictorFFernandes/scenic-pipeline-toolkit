@@ -1,14 +1,14 @@
 #!/bin/bash
 #
-# Downloads the REAL, official cisTarget files (resources.aertslab.org) and
-# builds a synthetic dataset (real genes/TFs, random expression) to test
-# 'pyscenic grn' + 'pyscenic ctx' end-to-end with official files, before
-# having real scRNA-seq data.
+# Baixa os arquivos REAIS e oficiais do cisTarget (resources.aertslab.org) e
+# monta um conjunto de dados sintético (genes/FTs reais, expressão
+# aleatória) para testar o 'pyscenic grn' + 'pyscenic ctx' de ponta a ponta
+# com arquivos oficiais, antes de ter dados reais de scRNA-seq.
 #
-# Requires the 'scenic' environment to be activated (uses ctxcore to read
-# the database).
+# Requer o ambiente 'scenic' ativado (usa o ctxcore para ler o banco de
+# dados).
 #
-# Usage:
+# Uso:
 #   conda activate scenic
 #   bash scripts/tests/setup_real_smoke_test.sh
 #
@@ -18,7 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../.."
 
 if ! python -c "import ctxcore" >/dev/null 2>&1; then
-    echo "ERROR: activate the 'scenic' environment first (conda activate scenic)."
+    echo "ERRO: ative o ambiente 'scenic' primeiro (conda activate scenic)."
     exit 1
 fi
 
@@ -35,25 +35,25 @@ TFS_PATH="downloads/hs_hgnc_tfs.txt"
 download() {
     local url="$1" dest="$2"
     if [ -f "$dest" ]; then
-        echo "Already exists, skipping: $dest"
+        echo "Já existe, pulando: $dest"
     else
-        echo "Downloading: $dest"
+        echo "Baixando: $dest"
         curl -L --fail -o "${dest}.part" "$url"
         mv "${dest}.part" "$dest"
     fi
 }
 
-echo "=== 1/3 Real cisTarget hg38 rankings database (~297 MB) ==="
+echo "=== 1/3 Banco de dados real de rankings hg38 do cisTarget (~297 MB) ==="
 download "$FEATHER_URL" "$FEATHER_PATH"
 
-echo "=== 2/3 Motif annotation table (~94 MB) ==="
+echo "=== 2/3 Tabela de anotação de motivos (~94 MB) ==="
 download "$TBL_URL" "$TBL_PATH"
 
-echo "=== 3/3 Human TF list (aertslab/pySCENIC) ==="
+echo "=== 3/3 Lista de FTs humanos (aertslab/pySCENIC) ==="
 download "$TFS_URL" "$TFS_PATH"
 
 echo
-echo "=== Generating a synthetic dataset with REAL genes/TFs ==="
+echo "=== Gerando um conjunto de dados sintético com genes/FTs REAIS ==="
 python "$SCRIPT_DIR/make_smoke_test_loom.py" \
     --feather "$FEATHER_PATH" \
     --tfs "$TFS_PATH" \
@@ -68,17 +68,17 @@ run_id,loom_path,tfs_path,output_path,num_workers,method,seed
 smoke_test,data/smoke_test.loom,data/smoke_test_tfs.txt,artifacts/examples/outs/smoke_test/adj_smoke_test.tsv,4,grnboost2,1
 EOF
 
-# nes_threshold set very low only for this mechanical test: since the
-# expression is random noise, it's unlikely to pass the default threshold
-# (2.5) of a real analysis. The goal here is to confirm the command runs and
-# writes output in the correct format with the official files, not to find
-# biologically valid regulons.
+# nes_threshold definido bem baixo apenas para este teste mecânico: como a
+# expressão é ruído aleatório, é pouco provável que passe pelo limiar padrão
+# (2.5) de uma análise real. O objetivo aqui é confirmar que o comando
+# executa e grava a saída no formato correto com os arquivos oficiais, não
+# encontrar regulons biologicamente válidos.
 cat > artifacts/examples/ctx_smoke_test.csv <<EOF
 run_id,tf_name,adj_path,feather_path,tbl_path,loom_path,nes_threshold,mode,num_workers,output_path
 smoke_test,ALL,artifacts/examples/outs/smoke_test/adj_smoke_test.tsv,$FEATHER_PATH,$TBL_PATH,data/smoke_test.loom,0.0,dask_multiprocessing,4,artifacts/examples/outs/smoke_test/reg_smoke_test.csv
 EOF
 
 echo
-echo "Done. Now run, in this order:"
+echo "Concluído. Agora execute, nesta ordem:"
 echo "    bash scripts/run_pyscenic_grn.sh artifacts/examples/grn_smoke_test.csv"
 echo "    bash scripts/run_pyscenic_ctx.sh artifacts/examples/ctx_smoke_test.csv"

@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 """
-Generates a synthetic .loom using REAL genes and TFs (extracted from the
-cisTarget database downloaded from resources.aertslab.org), to test the
-grn+ctx pipeline end-to-end with official files before having real scRNA-seq
-data.
+Gera um .loom sintético usando genes e FTs REAIS (extraídos do banco de
+dados cisTarget baixado de resources.aertslab.org), para testar o pipeline
+grn+ctx de ponta a ponta com arquivos oficiais antes de ter dados reais de
+scRNA-seq.
 
-Expression values are random noise (Poisson) — this tests the pipeline's
-MECHANICS (commands run, read the real files, write output in the correct
-format), not real biology. Regulons found here have no biological meaning.
+Os valores de expressão são ruído aleatório (Poisson) — isso testa a
+MECÂNICA do pipeline (comandos executam, leem os arquivos reais, escrevem a
+saída no formato correto), não a biologia real. Os regulons encontrados aqui
+não têm nenhum significado biológico.
 """
 import argparse
 import random
@@ -19,33 +20,33 @@ from ctxcore.rnkdb import FeatherRankingDatabase
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--feather", required=True, help="cisTarget rankings database (.feather)")
-    parser.add_argument("--tfs", required=True, help="human TF list (.txt, one per line)")
-    parser.add_argument("--out-loom", required=True, help="path of the synthetic .loom to create")
-    parser.add_argument("--out-tfs", required=True, help="path of the reduced TF list to create")
-    parser.add_argument("--n-genes", type=int, default=300, help="total genes in the synthetic loom")
-    parser.add_argument("--n-tfs", type=int, default=30, help="how many of those genes are TFs")
-    parser.add_argument("--n-cells", type=int, default=150, help="number of synthetic cells")
+    parser.add_argument("--feather", required=True, help="banco de dados de rankings do cisTarget (.feather)")
+    parser.add_argument("--tfs", required=True, help="lista de FTs humanos (.txt, um por linha)")
+    parser.add_argument("--out-loom", required=True, help="caminho do .loom sintético a ser criado")
+    parser.add_argument("--out-tfs", required=True, help="caminho da lista reduzida de FTs a ser criada")
+    parser.add_argument("--n-genes", type=int, default=300, help="total de genes no loom sintético")
+    parser.add_argument("--n-tfs", type=int, default=30, help="quantos desses genes são FTs")
+    parser.add_argument("--n-cells", type=int, default=150, help="número de células sintéticas")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
     random.seed(args.seed)
     np.random.seed(args.seed)
 
-    print(f"Reading genes available in the cisTarget database: {args.feather}")
+    print(f"Lendo genes disponíveis no banco de dados cisTarget: {args.feather}")
     db = FeatherRankingDatabase(fname=args.feather, name="smoke_test_db")
     db_genes = set(db.genes)
-    print(f"  -> {len(db_genes)} genes in the database")
+    print(f"  -> {len(db_genes)} genes no banco de dados")
 
     with open(args.tfs) as fh:
         all_tfs = [line.strip() for line in fh if line.strip()]
     tfs_in_db = sorted(db_genes.intersection(all_tfs))
-    print(f"  -> {len(tfs_in_db)} TFs from '{args.tfs}' exist in the database")
+    print(f"  -> {len(tfs_in_db)} FTs de '{args.tfs}' existem no banco de dados")
 
     if len(tfs_in_db) < args.n_tfs:
         raise SystemExit(
-            f"Only found {len(tfs_in_db)} TFs in common between {args.tfs} and the cisTarget "
-            f"database, but --n-tfs asks for {args.n_tfs}. Reduce --n-tfs."
+            f"Encontrados apenas {len(tfs_in_db)} FTs em comum entre {args.tfs} e o banco de "
+            f"dados cisTarget, mas --n-tfs pede {args.n_tfs}. Reduza --n-tfs."
         )
 
     chosen_tfs = random.sample(tfs_in_db, args.n_tfs)
@@ -53,25 +54,25 @@ def main():
     other_genes_pool = sorted(db_genes - set(chosen_tfs))
     n_other = args.n_genes - args.n_tfs
     if len(other_genes_pool) < n_other:
-        raise SystemExit(f"cisTarget database doesn't have enough genes for --n-genes {args.n_genes}.")
+        raise SystemExit(f"O banco de dados cisTarget não tem genes suficientes para --n-genes {args.n_genes}.")
     chosen_others = random.sample(other_genes_pool, n_other)
 
     genes = chosen_tfs + chosen_others
     random.shuffle(genes)
 
-    print(f"Generating synthetic matrix: {len(genes)} genes x {args.n_cells} cells (Poisson noise)")
+    print(f"Gerando matriz sintética: {len(genes)} genes x {args.n_cells} células (ruído Poisson)")
     matrix = np.random.poisson(3, size=(len(genes), args.n_cells)).astype(float)
     row_attrs = {"Gene": np.array(genes)}
     col_attrs = {"CellID": np.array([f"cell{i}" for i in range(args.n_cells)])}
     loompy.create(args.out_loom, matrix, row_attrs, col_attrs)
-    print(f"  -> loom saved to {args.out_loom}")
+    print(f"  -> loom salvo em {args.out_loom}")
 
     with open(args.out_tfs, "w") as fh:
         fh.write("\n".join(chosen_tfs) + "\n")
-    print(f"  -> {len(chosen_tfs)} TFs saved to {args.out_tfs}")
-    print("\nWARNING: expression is random noise — this validates that the pipeline RUNS")
-    print("with real cisTarget files, not that the regulons found make biological")
-    print("sense. That only comes from real scRNA-seq data.")
+    print(f"  -> {len(chosen_tfs)} FTs salvos em {args.out_tfs}")
+    print("\nAVISO: a expressão é ruído aleatório — isso valida que o pipeline EXECUTA")
+    print("com arquivos reais do cisTarget, não que os regulons encontrados fazem")
+    print("sentido biológico. Isso só vem de dados reais de scRNA-seq.")
 
 
 if __name__ == "__main__":
