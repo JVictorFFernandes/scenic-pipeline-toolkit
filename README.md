@@ -85,7 +85,7 @@ Instala o Conda/Mamba (caso não esteja instalado) e dois ambientes conda separa
 pacotes exigem versões incompatíveis de `pandas`/`numpy`/`dask`.
 
 Ambos os scripts podem ser reexecutados com segurança; o `verify_installation.sh`
-deve terminar com `Summary: ALL OK.` e indicará exatamente o que corrigir caso contrário.
+deve terminar com `Resumo: TUDO OK.` e indicará exatamente o que corrigir caso contrário.
 
 ```bash
 conda activate scenic       # para executar grn/ctx (abaixo)
