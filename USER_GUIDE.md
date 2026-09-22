@@ -1,66 +1,53 @@
-# User Guide
+# Guia do Usuário
 
-A step-by-step walkthrough for setting up this toolkit on a brand-new
-Ubuntu machine and running your first `pyscenic grn` + `ctx` analysis, from
-zero. For a quick command reference once you're up and running, see the
-[README](README.md).
+Um passo a passo para configurar este toolkit em uma máquina Ubuntu recém-instalada e executar sua primeira análise de `pyscenic grn` + `ctx`, do zero. Para uma referência rápida de comandos após a configuração inicial, consulte o [README](README.md).
 
-## 0. Before you start
+## 0. Antes de começar
 
-You'll need:
-- A fresh Ubuntu (or Debian-based) machine or VM, with `sudo` access.
-- Your own data: an expression matrix (`.loom`), a TF list (`.txt`), and
-  cisTarget motif databases (`.feather` + `.tbl` files) for the TFs you
-  want to analyze.
+Você precisará de:
+- Uma máquina ou VM com Ubuntu (ou baseada em Debian) recém-instalada, com acesso `sudo`.
+- Seus próprios dados: uma matriz de expressão (`.loom`), uma lista de fatores de transcrição (FTs) (`.txt`) e bancos de dados de motivos do cisTarget (arquivos `.feather` + `.tbl`) para os FTs que deseja analisar.
 
-Don't have your own data yet? Skip to [step 7](#7-no-data-yet-try-the-smoke-test)
-to try the whole pipeline with small, official reference files first.
+Ainda não tem seus próprios dados? Vá direto para o [passo 7](#7-ainda-não-tem-dados-experimente-o-smoke-test) para testar todo o pipeline com pequenos arquivos de referência oficiais primeiro.
 
-## 1. Clone the repository
+## 1. Clonar o repositório
 
 ```bash
 git clone https://github.com/PLeonLopes/scenic-pipeline-toolkit.git
 cd scenic-pipeline-toolkit
 ```
 
-## 2. Install pyscenic and pycistarget
+## 2. Instalar o pyscenic e o pycistarget
 
 ```bash
 bash scripts/install/install_pyscenic_pycistarget.sh
 ```
 
-This takes a few minutes the first time (installs Conda/Mamba if missing,
-then two separate environments). It's safe to run again if it's
-interrupted — it picks up where it left off.
+Isso leva alguns minutos na primeira vez (instala o Conda/Mamba caso não estejam instalados e, em seguida, dois ambientes separados). É seguro executar novamente se for interrompido — ele continuará de onde parou.
 
-Confirm it worked:
+Confirme se a instalação funcionou:
 
 ```bash
 bash scripts/install/verify_installation.sh
 ```
 
-You should see `Summary: ALL OK.` at the end. If not, the output tells you
-exactly which check failed — fix that before moving on.
+Você deverá ver `Summary: ALL OK.` ao final. Se não, a saída indicará exatamente qual verificação falhou — corrija o problema antes de prosseguir.
 
-From now on, open a new terminal (or run `source ~/.bashrc`) and activate
-the environment before doing anything else:
+A partir de agora, abra um novo terminal (ou execute `source ~/.bashrc`) e ative o ambiente antes de fazer qualquer outra coisa:
 
 ```bash
 conda activate scenic
 ```
 
-## 3. Put your data somewhere the toolkit can find it
+## 3. Coloque seus dados onde o toolkit possa encontrá-los
 
-Create a folder (any name, anywhere) and put these inside it:
-- Your `.loom` expression matrix.
-- Your TF list `.txt` file (filename must contain "tfs", e.g. `hs_hgnc_tfs.txt`).
-- One `.feather` + `.tbl` pair **per TF** you want to analyze (the two
-  filenames need to share the TF's name — see `--help` on the next step if
-  yours don't follow the default naming pattern).
-- *(Optional)* one extra, generic `.feather` + `.tbl` pair (not tied to any
-  single TF) if you also want a genome-wide baseline `ctx` run.
+Crie uma pasta (qualquer nome, em qualquer local) e coloque os seguintes arquivos dentro dela:
+- Sua matriz de expressão `.loom`.
+- Seu arquivo `.txt` com a lista de FTs (o nome do arquivo deve conter "tfs", ex.: `hs_hgnc_tfs.txt`).
+- Um par `.feather` + `.tbl` **por FT** que você deseja analisar (os dois nomes de arquivo precisam compartilhar o nome do FT — consulte `--help` no próximo passo se os seus não seguirem o padrão de nomenclatura padrão).
+- *(Opcional)* um par genérico extra de `.feather` + `.tbl` (não vinculado a nenhum FT específico) se você também quiser uma execução de controle (*baseline*) de `ctx` para todo o genoma.
 
-Example layout:
+Exemplo de estrutura:
 
 ```
 my_data/
@@ -72,15 +59,15 @@ my_data/
 └── TF2.tbl
 ```
 
-## 4. Generate your run configuration
+## 4. Gerar a configuração da execução
 
-This is the only "configuration" step — you never hand-write a CSV.
+Esta é a única etapa de "configuração" — você nunca precisará escrever um CSV manualmente.
 
 ```bash
 python scripts/generate_configs.py
 ```
 
-Answer the prompts (press Enter to accept the default in `[brackets]`):
+Responda às perguntas interativas (pressione Enter para aceitar o valor padrão entre `[colchetes]`):
 
 ```
 Folder with your data (loom, TF list, feather/tbl files): my_data
@@ -95,9 +82,7 @@ GRN method (used by grn) [grnboost2]:
 Output folder [artifacts/my_project/hepg2/outs]:
 ```
 
-For a first try, just accept every default (press Enter each time) except
-the data folder, project name, and run ID. At the end it prints what it
-found and where it wrote the config — something like:
+Para uma primeira tentativa, basta aceitar todos os valores padrão (pressionando Enter a cada vez), exceto a pasta de dados, o nome do projeto e o ID da execução. No final, o script exibirá o que encontrou e onde gravou as configurações — algo como:
 
 ```
 Found loom:          my_data/my_expression.loom
@@ -108,48 +93,33 @@ Wrote artifacts/my_project/HepG2/configs/grn_runs_2026-01-01_10-30-00.local.csv 
 Wrote artifacts/my_project/HepG2/configs/ctx_runs_2026-01-01_10-30-00.local.csv (2 rows)
 ```
 
-`artifacts/<project>/[<cell-line>/]configs/` is a **stable** folder — every
-time you run this, it adds a **new, timestamped file pair** there instead of
-overwriting the previous one, so you can always look back at exactly what
-config produced a given result. `logs/` and `outs/`, siblings of that
-`configs/` folder, are where that project's logs and pyscenic outputs will
-land once you run `grn`/`ctx` (see [step 8](#8-where-are-my-results)) —
-everything about one project stays together. Use
-`--project`/`--cell-line`/`--run-id` (and skip the prompts entirely) to
-script this — see the [README](README.md#2-configuring-a-run).
+`artifacts/<project>/[<cell-line>/]configs/` é uma pasta **estável** — toda vez que você executa este comando, ele adiciona um **novo par de arquivos com timestamp** lá em vez de sobrescrever o anterior, permitindo que você sempre consulte exatamente qual configuração gerou determinado resultado. As pastas irmãs `logs/` e `outs/` são os locais onde os logs e as saídas do pyscenic deste projeto serão salvos após executar `grn`/`ctx` (consulte o [passo 8](#8-onde-estão-os-meus-resultados)) — tudo sobre um projeto permanece junto. Use `--project`/`--cell-line`/`--run-id` (e pule totalmente as perguntas interativas) para automatizar isso via script — consulte o [README](README.md#2-configurando-uma-execução).
 
-If it complains it can't find your loom/TF list/feather/tbl files, double
-check step 3 — the filenames need to follow the patterns described there.
+Se o script informar que não conseguiu encontrar seus arquivos loom/lista de FTs/feather/tbl, verifique novamente o passo 3 — os nomes dos arquivos devem seguir os padrões descritos lá.
 
-## 5. Run `grn`
+## 5. Executar o `grn`
 
-Step 4 printed the exact commands to run, under "Next steps" — copy the
-first one, it looks like:
+O passo 4 exibiu os comandos exatos para execução sob "Next steps" — copie o primeiro, que se parece com isto:
 
 ```bash
 bash scripts/run_pyscenic_grn.sh artifacts/my_project/HepG2/configs/grn_runs_2026-01-01_10-30-00.local.csv
 ```
 
-You'll see `pyscenic`'s own progress live on screen. This is the slowest
-step — for a real dataset it can take from several minutes to hours,
-depending on your data size and machine. When it's done, you'll see a
-one-line summary per run and `[ OK ]` if everything went well.
+Você verá o progresso do `pyscenic` em tempo real na tela. Esta é a etapa mais demorada — para um conjunto de dados real, pode levar de vários minutos a algumas horas, dependendo do tamanho dos dados e da máquina. Quando terminar, você verá um resumo de uma linha por execução e `[ OK ]` se tudo tiver corrido bem.
 
-## 6. Run `ctx`
+## 6. Executar o `ctx`
 
-Same idea, with the second command from step 4's "Next steps":
+A mesma ideia, utilizando o segundo comando de "Next steps" do passo 4:
 
 ```bash
 bash scripts/run_pyscenic_ctx.sh artifacts/my_project/HepG2/configs/ctx_runs_2026-01-01_10-30-00.local.csv
 ```
 
-One run per TF (plus the baseline, if you have one). With the default
-settings you'll see a live `[####] | 42% Completed` progress bar for each.
+Uma execução por FT (além do baseline, se houver). Com as configurações padrão, você verá uma barra de progresso ao vivo `[####] | 42% Completed` para cada um.
 
-## 7. No data yet? Try the smoke test
+## 7. Ainda não tem dados? Experimente o smoke test
 
-Before you have your own files, you can validate the whole install using
-small, official reference files instead:
+Antes de ter seus próprios arquivos, você pode validar toda a instalação usando arquivos de referência oficiais menores:
 
 ```bash
 bash scripts/tests/setup_real_smoke_test.sh
@@ -157,50 +127,33 @@ bash scripts/run_pyscenic_grn.sh artifacts/examples/grn_smoke_test.csv
 bash scripts/run_pyscenic_ctx.sh artifacts/examples/ctx_smoke_test.csv
 ```
 
-This downloads ~390MB the first time. It proves the pipeline runs
-correctly end to end — it won't produce biologically meaningful results
-(the expression data is random noise), just a working mechanical test.
-Once you have real data, go back to [step 3](#3-put-your-data-somewhere-the-toolkit-can-find-it).
+Isso baixa cerca de 390 MB na primeira vez. Isso comprova que o pipeline roda corretamente de ponta a ponta — não produzirá resultados biologicamente significativos (os dados de expressão são ruído aleatório), servindo apenas como um teste mecânico de funcionamento. Quando tiver dados reais, volte para o [passo 3](#3-coloque-seus-dados-onde-o-toolkit-possa-encontrá-los).
 
-## 8. Where are my results?
+## 8. Onde estão os meus resultados?
 
-Everything about one project/cell-line — the config you generated, what
-happened when you ran it, and the results themselves — lives together
-under one `artifacts/<project>/[<cell-line>/]` folder, split into three
-sibling subfolders:
+Tudo sobre um projeto/linhagem celular — a configuração gerada, o que aconteceu durante a execução e os resultados em si — fica reunido sob uma única pasta `artifacts/<project>/[<cell-line>/]`, dividida em três subpastas irmãs:
 
 ```
-artifacts/my_project/hepg2/configs/grn_runs_*.local.csv           the config you generated (step 4)
+artifacts/my_project/hepg2/configs/grn_runs_*.local.csv           a configuração gerada (passo 4)
 artifacts/my_project/hepg2/configs/ctx_runs_*.local.csv
 
-artifacts/my_project/hepg2/outs/adj/<run_id>.tsv                  one per grn run (the regulatory network)
-artifacts/my_project/hepg2/outs/regs/<run_id>/reg_*.csv           one per ctx run (the regulons)
+artifacts/my_project/hepg2/outs/adj/<run_id>.tsv                  um por execução do grn (a rede regulatória)
+artifacts/my_project/hepg2/outs/regs/<run_id>/reg_*.csv           um por execução do ctx (os regulons)
 
-artifacts/my_project/hepg2/logs/<grn|ctx>_<run_id>.log            full output of that specific run
-artifacts/my_project/hepg2/logs/<grn|ctx>_summary_*.csv           one row per run: status, timing, output size
-artifacts/my_project/hepg2/logs/<grn|ctx>_<run_id>.meta.json      same info, structured, per run
+artifacts/my_project/hepg2/logs/<grn|ctx>_<run_id>.log            saída completa dessa execução específica
+artifacts/my_project/hepg2/logs/<grn|ctx>_summary_*.csv           uma linha por execução: status, tempo, tamanho da saída
+artifacts/my_project/hepg2/logs/<grn|ctx>_<run_id>.meta.json      as mesmas informações estruturadas por execução
 ```
 
-Nothing lives in a separate global `outs/` or `logs/` folder — so opening
-one project/cell-line folder shows you everything about it: what you
-*asked for* (`configs/`), what *happened* (`logs/`), and what *came out*
-(`outs/`).
+Nada fica em uma pasta global separada de `outs/` ou `logs/` — portanto, abrir a pasta de um projeto/linhagem celular mostra tudo sobre ele: o que você *solicitou* (`configs/`), o que *aconteceu* (`logs/`) e o que *foi gerado* (`outs/`).
 
-## 9. Something failed — now what?
+## 9. Algo falhou — e agora?
 
-Look at the `status` column in the summary table printed at the end (also
-saved to the `logs/` folder next to the config you ran — see
-[step 8](#8-where-are-my-results)). The
-[README](README.md#6-what-to-do-when-a-run-fails)
-explains what each status means and which log file to check.
+Verifique a coluna `status` na tabela de resumo exibida ao final (também salva na pasta `logs/` ao lado da configuração executada — consulte o [passo 8](#8-onde-estão-os-meus-resultados)). O [README](README.md#6-o-que-fazer-quando-uma-execução-falha) explica o significado de cada status e qual arquivo de log verificar.
 
-## 10. Ready to scale up?
+## 10. Pronto para escalar?
 
-Once a small run works end to end, you can:
-- Point `--data-dir` at your real, full dataset.
-- Add `--replicates 30` (or however many) to run `grn` multiple times for a
-  robustness check — see the [README](README.md#2-configuring-a-run) for
-  what that changes.
-- Move to a proper server rather than a laptop — see the memory note in the
-  README's [Notes](README.md#notes) section; a real TF list and dataset can
-  need much more RAM than the quick tests above.
+Assim que uma pequena execução funcionar de ponta a ponta, você pode:
+- Apontar o `--data-dir` para o seu conjunto de dados real e completo.
+- Adicionar `--replicates 30` (ou quantas desejar) para executar o `grn` várias vezes como teste de robustez — consulte o [README](README.md#2-configurando-uma-execução) para ver o que isso altera.
+- Migrar para um servidor dedicado em vez de um laptop — veja a nota sobre memória na seção [Notas](README.md#notas) do README; uma lista real de FTs e um dataset completo podem exigir muito mais memória RAM do que os testes rápidos acima.
