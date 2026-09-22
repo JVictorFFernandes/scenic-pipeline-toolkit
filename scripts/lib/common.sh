@@ -1,8 +1,8 @@
 #!/bin/bash
-# Shared logging and validation functions for the run_pyscenic_*.sh scripts.
-# This file is meant to be sourced, not executed directly.
+# Funções compartilhadas de log e validação para os scripts run_pyscenic_*.sh.
+# Este arquivo deve ser incluído (source), não executado diretamente.
 
-# Colors (automatically disabled when output isn't a terminal)
+# Cores (desativadas automaticamente quando a saída não é um terminal)
 if [ -t 1 ]; then
     C_RED='\033[0;31m'; C_GREEN='\033[0;32m'; C_YELLOW='\033[0;33m'; C_BLUE='\033[0;34m'; C_RESET='\033[0m'
 else
@@ -14,88 +14,89 @@ log_ok()    { echo -e "${C_GREEN}[ OK ]${C_RESET} $*"; }
 log_warn()  { echo -e "${C_YELLOW}[WARN]${C_RESET} $*"; }
 log_error() { echo -e "${C_RED}[FAIL]${C_RESET} $*" >&2; }
 
-# require_file <path> <description>
-# Returns 1 (without aborting the script) if the file doesn't exist or is empty.
+# require_file <caminho> <descrição>
+# Retorna 1 (sem abortar o script) se o arquivo não existir ou estiver vazio.
 require_file() {
     local path="$1" desc="$2"
     if [ -z "$path" ]; then
-        log_error "$desc: empty path in CSV"
+        log_error "$desc: caminho vazio no CSV"
         return 1
     fi
     if [ ! -f "$path" ]; then
-        log_error "$desc not found: $path"
+        log_error "$desc não encontrado: $path"
         return 1
     fi
     if [ ! -s "$path" ]; then
-        log_error "$desc is empty (0 bytes): $path"
+        log_error "$desc está vazio (0 bytes): $path"
         return 1
     fi
     return 0
 }
 
-# validate_csv_output <path> <col1> [col2 ...]
-# Checks that the output file exists, isn't empty, and contains the expected
-# columns in the header (substring match, order not required).
-# Returns the number of data rows (excluding header) via the global variable
-# VALIDATE_NROWS.
+# validate_csv_output <caminho> <col1> [col2 ...]
+# Verifica se o arquivo de saída existe, não está vazio e contém as colunas
+# esperadas no cabeçalho (correspondência por substring, ordem não é exigida).
+# Retorna o número de linhas de dados (excluindo o cabeçalho) por meio da
+# variável global VALIDATE_NROWS.
 validate_csv_output() {
     local path="$1"; shift
     local expected_cols=("$@")
 
     if [ ! -f "$path" ]; then
-        log_error "output was not created: $path"
+        log_error "a saída não foi criada: $path"
         return 1
     fi
     if [ ! -s "$path" ]; then
-        log_error "output is empty (0 bytes): $path"
+        log_error "a saída está vazia (0 bytes): $path"
         return 1
     fi
 
-    # pyscenic ctx writes a multi-line header (pandas MultiIndex), so we
-    # search the first few lines instead of just the first one.
+    # o pyscenic ctx grava um cabeçalho de múltiplas linhas (MultiIndex do
+    # pandas), então buscamos nas primeiras linhas em vez de apenas na primeira.
     local header
     header=$(head -n 3 "$path")
     local col
     for col in "${expected_cols[@]}"; do
         if [[ "$header" != *"$col"* ]]; then
-            log_error "expected column '$col' not found at the start of $path"
+            log_error "coluna esperada '$col' não encontrada no início de $path"
             return 1
         fi
     done
 
     VALIDATE_NROWS=$(( $(wc -l < "$path") - 1 ))
     if [ "$VALIDATE_NROWS" -le 0 ]; then
-        log_error "output has no data rows: $path"
+        log_error "a saída não tem linhas de dados: $path"
         return 1
     fi
     return 0
 }
 
-# Lines matched here are dropped from the LIVE terminal stream only — the
-# full, unfiltered output always still goes to the log file. These are
-# warnings that pyscenic/ctxcore print identically on every single run
-# (dependency deprecation notices, a static note about correlation
-# calculation) and add nothing after you've seen them once, but get very
-# repetitive across many rows in a CSV.
+# Linhas correspondentes aqui são removidas apenas do stream AO VIVO no
+# terminal — a saída completa e sem filtros sempre vai integralmente para o
+# arquivo de log. São avisos que o pyscenic/ctxcore imprimem de forma
+# idêntica em toda execução (avisos de depreciação de dependências, uma nota
+# estática sobre cálculo de correlação) e não agregam nada depois que você já
+# os viu uma vez, mas ficam muito repetitivos ao longo de várias linhas de um CSV.
 NOISY_LIVE_PATTERN='pkg_resources is deprecated|from pkg_resources import|Note on correlation calculation|Previously, the default was to calculate|current default is now to use all cells|The original settings can be retained|Dropout masking is currently set to'
 
-# run_and_log <log_file> -- <command...>
-# Runs the command, saving stdout+stderr to the log file. By default also
-# streams live to the terminal (filtering out NOISY_LIVE_PATTERN from what's
-# shown live, not from the log file), and returns the command's exit code
-# (deliberately not using 'set -e' here — the caller decides what to do on
-# failure).
+# run_and_log <arquivo_log> -- <comando...>
+# Executa o comando, salvando stdout+stderr no arquivo de log. Por padrão,
+# também transmite ao vivo para o terminal (filtrando NOISY_LIVE_PATTERN
+# apenas do que é exibido ao vivo, não do arquivo de log), e retorna o
+# código de saída do comando (deliberadamente sem usar 'set -e' aqui — quem
+# chama decide o que fazer em caso de falha).
 #
-# Streaming live matters here: with --mode dask_multiprocessing, "pyscenic
-# ctx" already prints a real percentage progress bar (dask.diagnostics.
-# ProgressBar) to stdout, and "pyscenic grn" prints milestone messages
-# ("Loading expression matrix.", "Inferring regulatory networks.", ...) —
-# both were previously hidden until the run finished because output went
-# only to the log file.
+# Transmitir ao vivo importa aqui: com --mode dask_multiprocessing, o
+# "pyscenic ctx" já imprime uma barra de progresso percentual real
+# (dask.diagnostics.ProgressBar) no stdout, e o "pyscenic grn" imprime
+# mensagens de marco (milestone) ("Loading expression matrix.", "Inferring
+# regulatory networks.", ...) — ambas ficavam ocultas até o fim da execução,
+# pois a saída ia apenas para o arquivo de log.
 #
-# Set QUIET=1 (see --quiet in the calling scripts) to go back to the old
-# behavior: no live output at all, only the log file — useful for
-# unattended runs (nohup/cron) where nobody is watching the terminal.
+# Defina QUIET=1 (veja --quiet nos scripts que chamam esta função) para
+# voltar ao comportamento antigo: nenhuma saída ao vivo, apenas o arquivo de
+# log — útil para execuções não supervisionadas (nohup/cron) onde ninguém
+# está observando o terminal.
 run_and_log() {
     local logfile="$1"; shift
     if [ "$1" == "--" ]; then shift; fi
@@ -116,19 +117,19 @@ run_and_log() {
 }
 
 # nproc_check <num_workers>
-# Only warns (doesn't block) if num_workers exceeds the cores available.
+# Apenas avisa (não bloqueia) se num_workers exceder os núcleos disponíveis.
 nproc_check() {
     local requested="$1"
     local available
     available=$(nproc 2>/dev/null || echo "?")
     if [ "$available" != "?" ] && [ "$requested" -gt "$available" ]; then
-        log_warn "num_workers=$requested is higher than the $available cores available on this machine"
+        log_warn "num_workers=$requested é maior que os $available núcleos disponíveis nesta máquina"
     fi
 }
 
-# file_size_bytes <path>
-# Prints the file size in bytes, or 0 if the file doesn't exist. Used for
-# the lightweight telemetry in the summary CSVs and per-run metadata JSON.
+# file_size_bytes <caminho>
+# Imprime o tamanho do arquivo em bytes, ou 0 se o arquivo não existir. Usado
+# para a telemetria leve nos CSVs de resumo e no JSON de metadados por execução.
 file_size_bytes() {
     local path="$1"
     if [ -f "$path" ]; then
@@ -139,8 +140,9 @@ file_size_bytes() {
 }
 
 # json_escape <string>
-# Minimal JSON string escaping (backslashes and double quotes — enough for
-# the paths/hostnames/commands we actually put in the metadata files).
+# Escape mínimo de string JSON (barras invertidas e aspas duplas — suficiente
+# para os caminhos/hostnames/comandos que de fato colocamos nos arquivos de
+# metadados).
 json_escape() {
     local s="$1"
     s="${s//\\/\\\\}"
@@ -148,11 +150,12 @@ json_escape() {
     printf '%s' "$s"
 }
 
-# write_run_metadata_json <json_path> <key1> <value1> [<key2> <value2> ...]
-# Writes a small JSON object of run metadata (parameters, timestamps,
-# output size, etc.) next to the log file, for later programmatic analysis
-# (e.g. aggregating stats across many replicates). Numeric-looking values
-# are written unquoted; everything else is quoted and escaped.
+# write_run_metadata_json <caminho_json> <chave1> <valor1> [<chave2> <valor2> ...]
+# Grava um pequeno objeto JSON com metadados da execução (parâmetros,
+# timestamps, tamanho da saída, etc.) ao lado do arquivo de log, para análise
+# programática posterior (ex.: agregar estatísticas entre várias réplicas).
+# Valores com aparência numérica são gravados sem aspas; todo o resto é
+# colocado entre aspas e escapado.
 write_run_metadata_json() {
     local json_path="$1"; shift
     local out="{" first=1
