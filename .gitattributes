@@ -1,5 +1,6 @@
-# Force Unix line endings (LF) on all text files, regardless of the
-# contributor's OS/editor. Prevents a repeat of the CRLF bug from 8ae1c64.
+# Força o uso de quebras de linha Unix (LF) em todos os arquivos de texto,
+# independentemente do sistema operacional/editor do contribuidor. Evita a
+# repetição do bug de CRLF do commit 8ae1c64.
 * text=auto eol=lf
 
 *.loom binary

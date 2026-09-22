@@ -1,25 +1,25 @@
-## Summary
+## Resumo
 
-<!-- What does this PR do, and why? -->
+<!-- O que este PR faz, e por quê? -->
 
-## Type of change
+## Tipo de alteração
 
-<!-- Delete the ones that don't apply -->
+<!-- Apague as que não se aplicam -->
 
-- Feature (new functionality)
-- Fix (bug fix)
-- Refactor (no behavior change)
+- Feature (nova funcionalidade)
+- Fix (correção de bug)
+- Refactor (sem alteração de comportamento)
 - Docs
 
-## How was this tested?
+## Como isso foi testado?
 
-<!-- What did you run to confirm this works? e.g. --dry-run output,
-     a real grn/ctx run, ruff/shellcheck locally, etc. -->
+<!-- O que você executou para confirmar que funciona? ex.: saída do --dry-run,
+     uma execução real de grn/ctx, ruff/shellcheck localmente, etc. -->
 
 ## Checklist
 
-- [ ] Tested locally (dry-run and/or a real `grn`/`ctx` run, as relevant)
-- [ ] `shellcheck` passes on any changed `.sh` files (or CI will catch it)
-- [ ] `ruff check .` passes on any changed `.py` files (or CI will catch it)
-- [ ] Docs updated if behavior, flags, or file layout changed (README / USER_GUIDE)
-- [ ] No real data, credentials, or machine-specific paths committed (check `.gitignore` covers anything new)
+- [ ] Testado localmente (dry-run e/ou uma execução real de `grn`/`ctx`, conforme aplicável)
+- [ ] `shellcheck` passa em todos os arquivos `.sh` alterados (ou a CI vai detectar)
+- [ ] `ruff check .` passa em todos os arquivos `.py` alterados (ou a CI vai detectar)
+- [ ] Documentação atualizada caso o comportamento, as flags ou a estrutura de arquivos tenham mudado (README / USER_GUIDE)
+- [ ] Nenhum dado real, credencial ou caminho específico da máquina foi commitado (verifique se o `.gitignore` cobre qualquer novidade)

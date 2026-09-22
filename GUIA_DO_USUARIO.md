@@ -20,7 +20,7 @@ cd scenic-pipeline-toolkit
 ## 2. Instalar o pyscenic e o pycistarget
 
 ```bash
-bash scripts/install/install_pyscenic_pycistarget.sh
+bash scripts/instalacao/install_pyscenic_pycistarget.sh
 ```
 
 Isso leva alguns minutos na primeira vez (instala o Conda/Mamba caso não estejam instalados e, em seguida, dois ambientes separados). É seguro executar novamente se for interrompido — ele continuará de onde parou.
@@ -28,10 +28,10 @@ Isso leva alguns minutos na primeira vez (instala o Conda/Mamba caso não esteja
 Confirme se a instalação funcionou:
 
 ```bash
-bash scripts/install/verify_installation.sh
+bash scripts/instalacao/verify_installation.sh
 ```
 
-Você deverá ver `Summary: ALL OK.` ao final. Se não, a saída indicará exatamente qual verificação falhou — corrija o problema antes de prosseguir.
+Você deverá ver `Resumo: TUDO OK.` ao final. Se não, a saída indicará exatamente qual verificação falhou — corrija o problema antes de prosseguir.
 
 A partir de agora, abra um novo terminal (ou execute `source ~/.bashrc`) e ative o ambiente antes de fazer qualquer outra coisa:
 
@@ -70,49 +70,49 @@ python scripts/generate_configs.py
 Responda às perguntas interativas (pressione Enter para aceitar o valor padrão entre `[colchetes]`):
 
 ```
-Folder with your data (loom, TF list, feather/tbl files): my_data
-Project name (groups related runs under artifacts/<project>/, e.g. 'canonical_tfs'): my_project
-Cell line (optional, e.g. 'HepG2'): HepG2
-Run ID (short name for this experiment, e.g. 'my_experiment'): my_first_run
-Number of grn replicates (grnboost2 is stochastic; run it several times for robustness) [1]:
-Number of workers [4]:
-NES threshold (used by ctx) [2.5]:
-Dask mode (used by ctx) [dask_multiprocessing]:
-GRN method (used by grn) [grnboost2]:
-Output folder [artifacts/my_project/hepg2/outs]:
+Pasta com seus dados (loom, lista de FTs, arquivos feather/tbl): my_data
+Nome do projeto (agrupa execuções relacionadas em artefatos/<project>/, ex.: 'canonical_tfs'): my_project
+Linhagem celular (opcional, ex.: 'HepG2'): HepG2
+ID da execução (nome curto para este experimento, ex.: 'my_experiment'): my_first_run
+Número de réplicas do grn (o grnboost2 é estocástico; execute várias vezes para robustez) [1]:
+Número de workers [4]:
+Limiar de NES (usado pelo ctx) [2.5]:
+Modo do Dask (usado pelo ctx) [dask_multiprocessing]:
+Método de GRN (usado pelo grn) [grnboost2]:
+Pasta de saída [artefatos/my_project/hepg2/outs]:
 ```
 
 Para uma primeira tentativa, basta aceitar todos os valores padrão (pressionando Enter a cada vez), exceto a pasta de dados, o nome do projeto e o ID da execução. No final, o script exibirá o que encontrou e onde gravou as configurações — algo como:
 
 ```
-Found loom:          my_data/my_expression.loom
-Found TF list:       my_data/my_tfs.txt
-Found 2 TF(s) with both feather+tbl: TF1, TF2
-Artifact folder:     artifacts/my_project/HepG2
-Wrote artifacts/my_project/HepG2/configs/grn_runs_2026-01-01_10-30-00.local.csv (1 row(s), seed=1..1 for reproducibility)
-Wrote artifacts/my_project/HepG2/configs/ctx_runs_2026-01-01_10-30-00.local.csv (2 rows)
+Loom encontrado:              my_data/my_expression.loom
+Lista de FTs encontrada:      my_data/my_tfs.txt
+Encontrado(s) 2 FT(s) com feather+tbl: TF1, TF2
+Pasta de artefatos:  artefatos/my_project/HepG2
+Gravado artefatos/my_project/HepG2/configs/grn_runs_2026-01-01_10-30-00.local.csv (1 linha(s), seed=1..1 para reprodutibilidade)
+Gravado artefatos/my_project/HepG2/configs/ctx_runs_2026-01-01_10-30-00.local.csv (2 linhas)
 ```
 
-`artifacts/<project>/[<cell-line>/]configs/` é uma pasta **estável** — toda vez que você executa este comando, ele adiciona um **novo par de arquivos com timestamp** lá em vez de sobrescrever o anterior, permitindo que você sempre consulte exatamente qual configuração gerou determinado resultado. As pastas irmãs `logs/` e `outs/` são os locais onde os logs e as saídas do pyscenic deste projeto serão salvos após executar `grn`/`ctx` (consulte o [passo 8](#8-onde-estão-os-meus-resultados)) — tudo sobre um projeto permanece junto. Use `--project`/`--cell-line`/`--run-id` (e pule totalmente as perguntas interativas) para automatizar isso via script — consulte o [README](README.md#2-configurando-uma-execução).
+`artefatos/<project>/[<cell-line>/]configs/` é uma pasta **estável** — toda vez que você executa este comando, ele adiciona um **novo par de arquivos com timestamp** lá em vez de sobrescrever o anterior, permitindo que você sempre consulte exatamente qual configuração gerou determinado resultado. As pastas irmãs `logs/` e `outs/` são os locais onde os logs e as saídas do pyscenic deste projeto serão salvos após executar `grn`/`ctx` (consulte o [passo 8](#8-onde-estão-os-meus-resultados)) — tudo sobre um projeto permanece junto. Use `--project`/`--cell-line`/`--run-id` (e pule totalmente as perguntas interativas) para automatizar isso via script — consulte o [README](README.md#2-configurando-uma-execução).
 
 Se o script informar que não conseguiu encontrar seus arquivos loom/lista de FTs/feather/tbl, verifique novamente o passo 3 — os nomes dos arquivos devem seguir os padrões descritos lá.
 
 ## 5. Executar o `grn`
 
-O passo 4 exibiu os comandos exatos para execução sob "Next steps" — copie o primeiro, que se parece com isto:
+O passo 4 exibiu os comandos exatos para execução sob "Próximos passos" — copie o primeiro, que se parece com isto:
 
 ```bash
-bash scripts/run_pyscenic_grn.sh artifacts/my_project/HepG2/configs/grn_runs_2026-01-01_10-30-00.local.csv
+bash scripts/run_pyscenic_grn.sh artefatos/my_project/HepG2/configs/grn_runs_2026-01-01_10-30-00.local.csv
 ```
 
 Você verá o progresso do `pyscenic` em tempo real na tela. Esta é a etapa mais demorada — para um conjunto de dados real, pode levar de vários minutos a algumas horas, dependendo do tamanho dos dados e da máquina. Quando terminar, você verá um resumo de uma linha por execução e `[ OK ]` se tudo tiver corrido bem.
 
 ## 6. Executar o `ctx`
 
-A mesma ideia, utilizando o segundo comando de "Next steps" do passo 4:
+A mesma ideia, utilizando o segundo comando de "Próximos passos" do passo 4:
 
 ```bash
-bash scripts/run_pyscenic_ctx.sh artifacts/my_project/HepG2/configs/ctx_runs_2026-01-01_10-30-00.local.csv
+bash scripts/run_pyscenic_ctx.sh artefatos/my_project/HepG2/configs/ctx_runs_2026-01-01_10-30-00.local.csv
 ```
 
 Uma execução por FT (além do baseline, se houver). Com as configurações padrão, você verá uma barra de progresso ao vivo `[####] | 42% Completed` para cada um.
@@ -122,27 +122,27 @@ Uma execução por FT (além do baseline, se houver). Com as configurações pad
 Antes de ter seus próprios arquivos, você pode validar toda a instalação usando arquivos de referência oficiais menores:
 
 ```bash
-bash scripts/tests/setup_real_smoke_test.sh
-bash scripts/run_pyscenic_grn.sh artifacts/examples/grn_smoke_test.csv
-bash scripts/run_pyscenic_ctx.sh artifacts/examples/ctx_smoke_test.csv
+bash scripts/testes/setup_real_smoke_test.sh
+bash scripts/run_pyscenic_grn.sh artefatos/exemplos/grn_smoke_test.csv
+bash scripts/run_pyscenic_ctx.sh artefatos/exemplos/ctx_smoke_test.csv
 ```
 
 Isso baixa cerca de 390 MB na primeira vez. Isso comprova que o pipeline roda corretamente de ponta a ponta — não produzirá resultados biologicamente significativos (os dados de expressão são ruído aleatório), servindo apenas como um teste mecânico de funcionamento. Quando tiver dados reais, volte para o [passo 3](#3-coloque-seus-dados-onde-o-toolkit-possa-encontrá-los).
 
 ## 8. Onde estão os meus resultados?
 
-Tudo sobre um projeto/linhagem celular — a configuração gerada, o que aconteceu durante a execução e os resultados em si — fica reunido sob uma única pasta `artifacts/<project>/[<cell-line>/]`, dividida em três subpastas irmãs:
+Tudo sobre um projeto/linhagem celular — a configuração gerada, o que aconteceu durante a execução e os resultados em si — fica reunido sob uma única pasta `artefatos/<project>/[<cell-line>/]`, dividida em três subpastas irmãs:
 
 ```
-artifacts/my_project/hepg2/configs/grn_runs_*.local.csv           a configuração gerada (passo 4)
-artifacts/my_project/hepg2/configs/ctx_runs_*.local.csv
+artefatos/my_project/hepg2/configs/grn_runs_*.local.csv           a configuração gerada (passo 4)
+artefatos/my_project/hepg2/configs/ctx_runs_*.local.csv
 
-artifacts/my_project/hepg2/outs/adj/<run_id>.tsv                  um por execução do grn (a rede regulatória)
-artifacts/my_project/hepg2/outs/regs/<run_id>/reg_*.csv           um por execução do ctx (os regulons)
+artefatos/my_project/hepg2/outs/adj/<run_id>.tsv                  um por execução do grn (a rede regulatória)
+artefatos/my_project/hepg2/outs/regs/<run_id>/reg_*.csv           um por execução do ctx (os regulons)
 
-artifacts/my_project/hepg2/logs/<grn|ctx>_<run_id>.log            saída completa dessa execução específica
-artifacts/my_project/hepg2/logs/<grn|ctx>_summary_*.csv           uma linha por execução: status, tempo, tamanho da saída
-artifacts/my_project/hepg2/logs/<grn|ctx>_<run_id>.meta.json      as mesmas informações estruturadas por execução
+artefatos/my_project/hepg2/logs/<grn|ctx>_<run_id>.log            saída completa dessa execução específica
+artefatos/my_project/hepg2/logs/<grn|ctx>_summary_*.csv           uma linha por execução: status, tempo, tamanho da saída
+artefatos/my_project/hepg2/logs/<grn|ctx>_<run_id>.meta.json      as mesmas informações estruturadas por execução
 ```
 
 Nada fica em uma pasta global separada de `outs/` ou `logs/` — portanto, abrir a pasta de um projeto/linhagem celular mostra tudo sobre ele: o que você *solicitou* (`configs/`), o que *aconteceu* (`logs/`) e o que *foi gerado* (`outs/`).

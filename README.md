@@ -41,7 +41,7 @@ flowchart LR
         Ctx["run_pyscenic_ctx.sh"]
     end
 
-    subgraph S5["artifacts/&lt;project&gt;/ — saídas e logs"]
+    subgraph S5["artefatos/&lt;project&gt;/ — saídas e logs"]
         direction LR
         Adj(["outs/adj/*.tsv"])
         Regulons(["outs/regs/*/*.csv"])
@@ -76,8 +76,8 @@ legível — consulte as respectivas seções abaixo.
 ## 1. Instalação
 
 ```bash
-bash scripts/install/install_pyscenic_pycistarget.sh
-bash scripts/install/verify_installation.sh
+bash scripts/instalacao/install_pyscenic_pycistarget.sh
+bash scripts/instalacao/verify_installation.sh
 ```
 
 Instala o Conda/Mamba (caso não esteja instalado) e dois ambientes conda separados —
@@ -85,7 +85,7 @@ Instala o Conda/Mamba (caso não esteja instalado) e dois ambientes conda separa
 pacotes exigem versões incompatíveis de `pandas`/`numpy`/`dask`.
 
 Ambos os scripts podem ser reexecutados com segurança; o `verify_installation.sh`
-deve terminar com `Summary: ALL OK.` e indicará exatamente o que corrigir caso contrário.
+deve terminar com `Resumo: TUDO OK.` e indicará exatamente o que corrigir caso contrário.
 
 ```bash
 conda activate scenic       # para executar grn/ctx (abaixo)
@@ -113,23 +113,23 @@ Cada execução adiciona um novo **par de arquivos** com carimbo de data/hora (*
 a uma pasta `configs/` estável — nada é sobrescrito, garantindo uma trilha de
 auditoria completa. Os diretórios `logs/` e `outs/` ficam no mesmo nível da pasta
 `configs/`, de modo que tudo relacionado a um projeto/linhagem celular fique
-reunido sob um único diretório `artifacts/<project>/`:
+reunido sob um único diretório `artefatos/<project>/`:
 
 ```
-artifacts/<project>/[<cell-line>/]configs/grn_runs_<timestamp>.local.csv
-artifacts/<project>/[<cell-line>/]configs/ctx_runs_<timestamp>.local.csv
-artifacts/<project>/[<cell-line>/]logs/...          (gerado ao executar grn/ctx)
-artifacts/<project>/[<cell-line>/]outs/adj/...      (gerado pelo grn)
-artifacts/<project>/[<cell-line>/]outs/regs/...     (gerado pelo ctx)
+artefatos/<project>/[<cell-line>/]configs/grn_runs_<timestamp>.local.csv
+artefatos/<project>/[<cell-line>/]configs/ctx_runs_<timestamp>.local.csv
+artefatos/<project>/[<cell-line>/]logs/...          (gerado ao executar grn/ctx)
+artefatos/<project>/[<cell-line>/]outs/adj/...      (gerado pelo grn)
+artefatos/<project>/[<cell-line>/]outs/regs/...     (gerado pelo ctx)
 ```
 
 `--project` agrupa execuções relacionadas (ex.: todos os experimentos com FTs canônicos);
 `--cell-line` é opcional, oferecendo mais um nível de agrupamento (ex.: `HepG2`,
 `K562`) — ambos não diferenciam maiúsculas de minúsculas (`HepG2`/`hepg2`/`HEPG2`
-apontam para a mesma pasta). Toda essa árvore é ignorada pelo Git (`artifacts/`) —
+apontam para a mesma pasta). Toda essa árvore é ignorada pelo Git (`artefatos/`) —
 ela armazena caminhos reais específicos da máquina e saídas das execuções. A pasta
-`artifacts/examples/*.example.csv` é um conjunto separado e rastreado de modelos para
-o *smoke test*, sem relação com este diretório `artifacts/.../configs/` específico por projeto.
+`artefatos/exemplos/*.example.csv` é um conjunto separado e rastreado de modelos para
+o *smoke test*, sem relação com este diretório `artefatos/.../configs/` específico por projeto.
 
 Os resultados (`--outs-dir`, por padrão o diretório irmão `outs/` descrito acima)
 e os logs desta execução (gravados por `grn`/`ctx` na pasta irmã `logs/`)
@@ -168,13 +168,13 @@ você também verá a barra de progresso em tempo real do `pyscenic`
 
 O `grn`/`ctx` gravam seus logs em um diretório `logs/` que fica no **mesmo nível
 da pasta `configs/` onde está o CSV executado** — ex.:
-`artifacts/<project>/[<cell-line>/]logs/` — em vez de uma pasta global única, mantendo
+`artefatos/<project>/[<cell-line>/]logs/` — em vez de uma pasta global única, mantendo
 juntos as configurações, os resultados e todo o histórico de execução de um projeto:
 
 ```
-artifacts/<project>/[<cell-line>/]logs/<grn|ctx>_<run_id>.log
-artifacts/<project>/[<cell-line>/]logs/<grn|ctx>_summary_<date>.csv
-artifacts/<project>/[<cell-line>/]logs/<grn|ctx>_<run_id>.meta.json
+artefatos/<project>/[<cell-line>/]logs/<grn|ctx>_<run_id>.log
+artefatos/<project>/[<cell-line>/]logs/<grn|ctx>_summary_<date>.csv
+artefatos/<project>/[<cell-line>/]logs/<grn|ctx>_<run_id>.meta.json
 ```
 
 O CSV de resumo contém uma linha por execução (`elapsed_seconds`, `output_size_bytes`,
@@ -187,11 +187,11 @@ entre múltiplas réplicas sem precisar reprocessar os logs:
 {"run_id": "my_experiment", "status": "OK", "command": "pyscenic grn ...",
  "n_edges": 2495, "output_size_bytes": 79667, "elapsed_seconds": 12,
  "started_at": "2026-01-01T10:00:00-03:00", "finished_at": "2026-01-01T10:00:12-03:00",
- "hostname": "my-server", "log_file": "artifacts/my_project/logs/grn_my_experiment.log", "...": "..."}
+ "hostname": "my-server", "log_file": "artefatos/my_project/logs/grn_my_experiment.log", "...": "..."}
 ```
 
 Os resultados seguem o mesmo layout de projeto/linhagem celular por padrão:
-`artifacts/<project>/[<cell-line>/]outs/adj/...` e `.../outs/regs/...` —
+`artefatos/<project>/[<cell-line>/]outs/adj/...` e `.../outs/regs/...` —
 consulte a [seção 2](#2-configurando-uma-execução).
 
 ## 5. Flags
@@ -229,9 +229,9 @@ antes de usar seus próprios dados.
 
 ```bash
 conda activate scenic
-bash scripts/tests/setup_real_smoke_test.sh
-bash scripts/run_pyscenic_grn.sh artifacts/examples/grn_smoke_test.csv
-bash scripts/run_pyscenic_ctx.sh artifacts/examples/ctx_smoke_test.csv
+bash scripts/testes/setup_real_smoke_test.sh
+bash scripts/run_pyscenic_grn.sh artefatos/exemplos/grn_smoke_test.csv
+bash scripts/run_pyscenic_ctx.sh artefatos/exemplos/ctx_smoke_test.csv
 ```
 
 Baixa cerca de 390 MB na primeira execução. Como os dados de expressão são ruído aleatório,
@@ -250,13 +250,13 @@ Essa etapa é opcional — o painel fecha automaticamente ao término da execuç
 ## Estrutura do projeto
 
 ```
-scripts/install/                      scripts de instalação (pyscenic + pycistarget)
+scripts/instalacao/                   scripts de instalação (pyscenic + pycistarget)
 scripts/                              scripts genéricos de grn/ctx + generate_configs.py + lib/common.sh
-scripts/tests/                        scripts exclusivos para smoke test (não fazem parte de execuções reais)
-artifacts/examples/                   CSVs de exemplo/smoke test rastreados (consulte a seção 7) — exceção no .gitignore
-artifacts/<project>/[<cell-line>/]    configs/, logs/ e outs/ de execuções reais, agrupados (não versionados)
-references/                           scripts bash monouso originais que este toolkit
-                                      generaliza — mantidos apenas para histórico e contexto, não devem ser executados
+scripts/testes/                       scripts exclusivos para smoke test (não fazem parte de execuções reais)
+artefatos/exemplos/                   CSVs de exemplo/smoke test rastreados (consulte a seção 7) — exceção no .gitignore
+artefatos/<project>/[<cell-line>/]    configs/, logs/ e outs/ de execuções reais, agrupados (não versionados)
+referencias/                          scripts bash monouso originais que este toolkit
+                                       generaliza — mantidos apenas para histórico e contexto, não devem ser executados
 data/, downloads/                     dados de entrada (não versionados, consulte o .gitignore)
 ```
 
