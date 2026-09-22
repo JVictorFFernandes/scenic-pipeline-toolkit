@@ -12,10 +12,10 @@
 # usam o pycistarget).
 #
 # Uso:
-#   bash scripts/install/install_pyscenic_pycistarget.sh
+#   bash scripts/instalacao/install_pyscenic_pycistarget.sh
 #
 # Após executar, valide com:
-#   bash scripts/install/verify_installation.sh
+#   bash scripts/instalacao/verify_installation.sh
 #
 set -euo pipefail
 
@@ -234,4 +234,4 @@ echo "    conda activate $ENV_PYSCENIC       # para executar os scripts de grn/c
 echo "    conda activate $ENV_PYCISTARGET    # para trabalhar com o pycistarget"
 echo
 echo "Para confirmar que tudo está funcionando, execute:"
-echo "    bash scripts/install/verify_installation.sh"
+echo "    bash scripts/instalacao/verify_installation.sh"

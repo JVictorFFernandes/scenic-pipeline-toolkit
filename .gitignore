@@ -9,22 +9,22 @@ test_data/
 
 # Tudo gerado por uma execução real — CSVs de configuração, logs e as
 # próprias saídas do pyscenic (adj/, regs/) — fica junto sob
-# artifacts/<project>/[<cell-line>/], gerado pelo scripts/generate_configs.py
+# artefatos/<project>/[<cell-line>/], gerado pelo scripts/generate_configs.py
 # e nunca escrito manualmente nem commitado. Ignora tudo diretamente sob
-# artifacts/ EXCETO artifacts/examples/, que guarda modelos rastreados e
+# artefatos/ EXCETO artefatos/exemplos/, que guarda modelos rastreados e
 # seguros para compartilhar, usados no smoke test (veja
 # scripts/tests/setup_real_smoke_test.sh).
-artifacts/*
-!artifacts/examples/
+artefatos/*
+!artefatos/exemplos/
 
-# ...mas a saída/logs gerados pelo próprio smoke test sob artifacts/examples/
+# ...mas a saída/logs gerados pelo próprio smoke test sob artefatos/exemplos/
 # ainda são específicos da execução, então continuam ignorados mesmo dentro
 # dessa exceção.
-artifacts/examples/outs/
-artifacts/examples/logs/
+artefatos/exemplos/outs/
+artefatos/exemplos/logs/
 
 # Estrutura antiga, mantida ignorada caso alguma máquina ainda tenha uma
-# dessas de antes de a pasta artifacts/ existir.
+# dessas de antes de a pasta artefatos/ existir.
 configs/
 outs/
 logs/

@@ -6,7 +6,7 @@
 # Uso:
 #   bash scripts/run_pyscenic_ctx.sh [config.csv] [--dry-run] [--force] [--quiet]
 #
-#   config.csv   caminho do CSV (padrão: artifacts/ctx_runs.local.csv — gere-o
+#   config.csv   caminho do CSV (padrão: artefatos/ctx_runs.local.csv — gere-o
 #                com scripts/generate_configs.py, não o escreva manualmente)
 #   --dry-run    apenas valida os caminhos e imprime o comando, sem chamar o pyscenic
 #   --force      reprocessa execuções mesmo se output_path já existir
@@ -21,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/common.sh"
 
-CONFIG_CSV="artifacts/ctx_runs.local.csv"
+CONFIG_CSV="artefatos/ctx_runs.local.csv"
 DRY_RUN=0
 FORCE=0
 QUIET=0
@@ -46,7 +46,7 @@ fi
 # pasta configs/ (não um logs/ global único) — assim, tudo sobre um
 # projeto/linhagem celular (suas configurações, suas saídas e o que
 # aconteceu durante a execução) fica reunido. Um CSV que não esteja dentro
-# de uma pasta configs/ (ex.: artifacts/examples/*.csv, o smoke test) usa em
+# de uma pasta configs/ (ex.: artefatos/exemplos/*.csv, o smoke test) usa em
 # vez disso uma pasta logs/ bem ao lado dele.
 CSV_DIR="$(dirname "$CONFIG_CSV")"
 if [ "$(basename "$CSV_DIR")" = "configs" ]; then

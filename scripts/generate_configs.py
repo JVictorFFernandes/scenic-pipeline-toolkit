@@ -43,21 +43,21 @@ modo que o histórico completo de cada configuração gerada permanece em disco
 para auditoria. As pastas logs/ e outs/ (adj/, regs/ do próprio pyscenic)
 são irmãs dessa pasta configs/, de modo que tudo sobre um
 projeto/linhagem celular — o que você pediu, o que aconteceu e o que saiu —
-fica reunido sob uma única pasta artifacts/<project>/:
+fica reunido sob uma única pasta artefatos/<project>/:
 
-    artifacts/<project>/[<cell-line>/]configs/grn_runs_<timestamp>.local.csv
-    artifacts/<project>/[<cell-line>/]configs/ctx_runs_<timestamp>.local.csv
-    artifacts/<project>/[<cell-line>/]logs/...
-    artifacts/<project>/[<cell-line>/]outs/adj/...
-    artifacts/<project>/[<cell-line>/]outs/regs/...
+    artefatos/<project>/[<cell-line>/]configs/grn_runs_<timestamp>.local.csv
+    artefatos/<project>/[<cell-line>/]configs/ctx_runs_<timestamp>.local.csv
+    artefatos/<project>/[<cell-line>/]logs/...
+    artefatos/<project>/[<cell-line>/]outs/adj/...
+    artefatos/<project>/[<cell-line>/]outs/regs/...
 
 --project agrupa execuções relacionadas (ex.: todo o trabalho com FTs
 canônicos); --cell-line é opcional e adiciona mais um nível de agrupamento
 (ex.: 'HepG2', 'K562'). Esses arquivos *.local.csv gerados são os que
 scripts/run_pyscenic_grn.sh e scripts/run_pyscenic_ctx.sh recebem como
-argumento, e toda a árvore artifacts/<project>/ é ignorada pelo Git — ela
+argumento, e toda a árvore artefatos/<project>/ é ignorada pelo Git — ela
 contém caminhos reais específicos da máquina e saídas de execuções, nunca
-deve ser commitada. artifacts/examples/*.example.csv é algo separado:
+deve ser commitada. artefatos/exemplos/*.example.csv é algo separado:
 modelos rastreados e seguros para compartilhar, usados no smoke test, não
 gerados por este script.
 """
@@ -98,7 +98,7 @@ def scoped_dir(root: str, project: str, cell_line: str | None) -> Path:
 
 
 def artifact_dir_for(project: str, cell_line: str | None) -> Path:
-    return scoped_dir("artifacts", project, cell_line)
+    return scoped_dir("artefatos", project, cell_line)
 
 
 def config_filenames(when: datetime | None = None) -> tuple[str, str]:
@@ -138,7 +138,7 @@ def run_interactive() -> argparse.Namespace:
         "Pasta com seus dados (loom, lista de FTs, arquivos feather/tbl)",
         validate=lambda v: None if Path(v).is_dir() else f"'{v}' não é um diretório, tente novamente.",
     )
-    project = ask("Nome do projeto (agrupa execuções relacionadas em artifacts/<project>/, ex.: 'canonical_tfs')")
+    project = ask("Nome do projeto (agrupa execuções relacionadas em artefatos/<project>/, ex.: 'canonical_tfs')")
     cell_line = input("Linhagem celular (opcional, ex.: 'HepG2'): ").strip() or None
     run_id = ask("ID da execução (nome curto para este experimento, ex.: 'my_experiment')")
     replicates = ask(
@@ -246,7 +246,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--project",
-        help="agrupa execuções relacionadas em artifacts/<project>/ (ex.: 'canonical_tfs'). "
+        help="agrupa execuções relacionadas em artefatos/<project>/ (ex.: 'canonical_tfs'). "
         "Obrigatório junto com --data-dir no modo não interativo.",
     )
     parser.add_argument("--cell-line", help="opcional, ex.: 'HepG2' — incluído no nome da pasta da execução")
@@ -271,7 +271,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--outs-dir",
         help="pasta de saída base para as próprias saídas do pyscenic, adj/ e regs/ "
-        "(padrão: artifacts/<project>/[<cell-line>/]outs/ — uma irmã de configs/ e "
+        "(padrão: artefatos/<project>/[<cell-line>/]outs/ — uma irmã de configs/ e "
         "logs/ desse projeto, para que tudo sobre ele fique reunido)",
     )
     parser.add_argument("--loom", help="override: caminho exato para o arquivo .loom (pula a descoberta automática)")
@@ -294,8 +294,8 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_TBL_REGEX,
         help=rf"regex com um grupo de captura para o nome do FT, aplicada aos nomes de arquivo .tbl (padrão: {DEFAULT_TBL_REGEX!r})",
     )
-    parser.add_argument("--grn-csv", help="override: caminho de saída exato para o CSV do grn (ignora a estrutura artifacts/<project>/<timestamp>/)")
-    parser.add_argument("--ctx-csv", help="override: caminho de saída exato para o CSV do ctx (ignora a estrutura artifacts/<project>/<timestamp>/)")
+    parser.add_argument("--grn-csv", help="override: caminho de saída exato para o CSV do grn (ignora a estrutura artefatos/<project>/<timestamp>/)")
+    parser.add_argument("--ctx-csv", help="override: caminho de saída exato para o CSV do ctx (ignora a estrutura artefatos/<project>/<timestamp>/)")
     args = parser.parse_args()
 
     if args.data_dir is None:
@@ -375,7 +375,7 @@ def main():
 
     # Cada execução adiciona um novo par de arquivos com timestamp a uma
     # pasta estável por projeto (opcionalmente por linhagem celular) —
-    # nada é sobrescrito, então artifacts/<project>/configs/ acumula um
+    # nada é sobrescrito, então artefatos/<project>/configs/ acumula um
     # histórico completo e auditável ao longo do tempo. logs/ e outs/ (via
     # o padrão de --outs-dir, acima) são irmãs de configs/ sob essa mesma
     # pasta de projeto/linhagem celular, para que tudo sobre um projeto

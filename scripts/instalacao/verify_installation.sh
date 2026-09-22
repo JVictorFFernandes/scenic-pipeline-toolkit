@@ -10,7 +10,7 @@
 # pandas).
 #
 # Uso:
-#   bash scripts/install/verify_installation.sh
+#   bash scripts/instalacao/verify_installation.sh
 #
 ENV_PYSCENIC="scenic"
 ENV_PYCISTARGET="pycistarget"
@@ -41,7 +41,7 @@ if command -v conda >/dev/null 2>&1; then
 else
     fail "comando 'conda' não encontrado no PATH"
     echo
-    echo "Resumo: FALHOU. Execute primeiro scripts/install/install_pyscenic_pycistarget.sh."
+    echo "Resumo: FALHOU. Execute primeiro scripts/instalacao/install_pyscenic_pycistarget.sh."
     echo "Se a instalação já foi executada, feche e reabra seu terminal (ou execute"
     echo "'source ~/.bashrc') para que o 'conda init' feito pelo instalador tenha efeito."
     exit 1

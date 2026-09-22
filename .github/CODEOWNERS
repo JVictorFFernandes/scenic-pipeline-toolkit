@@ -2,9 +2,9 @@
 *                       @PLeonLopes @irlvinicius @JVictorFFernandes
 
 # Scripts do pipeline e seus testes:
-/scripts/               @PLeonLopes @irlvinicius @JVictorFFernandes
-/scripts/tests/         @PLeonLopes @irlvinicius @JVictorFFernandes
+/scripts/                @PLeonLopes @irlvinicius @JVictorFFernandes
+/scripts/testes/         @PLeonLopes @irlvinicius @JVictorFFernandes
 
 # Scripts de instalação e configuração de CI/governança:
-/scripts/install/       @PLeonLopes @irlvinicius
+/scripts/instalacao/     @PLeonLopes @irlvinicius
 /.github/               @PLeonLopes @irlvinicius

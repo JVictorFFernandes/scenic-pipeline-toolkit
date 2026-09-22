@@ -10,7 +10,7 @@
 #
 # Uso:
 #   conda activate scenic
-#   bash scripts/tests/setup_real_smoke_test.sh
+#   bash scripts/testes/setup_real_smoke_test.sh
 #
 set -euo pipefail
 
@@ -22,7 +22,7 @@ if ! python -c "import ctxcore" >/dev/null 2>&1; then
     exit 1
 fi
 
-mkdir -p downloads/cistarget data artifacts/examples/outs/smoke_test
+mkdir -p downloads/cistarget data artefatos/exemplos/outs/smoke_test
 
 FEATHER_URL="https://resources.aertslab.org/cistarget/databases/homo_sapiens/hg38/refseq_r80/mc_v10_clust/gene_based/hg38_10kbp_up_10kbp_down_full_tx_v10_clust.genes_vs_motifs.rankings.feather"
 TBL_URL="https://resources.aertslab.org/cistarget/motif2tf/motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl"
@@ -63,9 +63,9 @@ python "$SCRIPT_DIR/make_smoke_test_loom.py" \
     --n-tfs 30 \
     --n-cells 150
 
-cat > artifacts/examples/grn_smoke_test.csv <<EOF
+cat > artefatos/exemplos/grn_smoke_test.csv <<EOF
 run_id,loom_path,tfs_path,output_path,num_workers,method,seed
-smoke_test,data/smoke_test.loom,data/smoke_test_tfs.txt,artifacts/examples/outs/smoke_test/adj_smoke_test.tsv,4,grnboost2,1
+smoke_test,data/smoke_test.loom,data/smoke_test_tfs.txt,artefatos/exemplos/outs/smoke_test/adj_smoke_test.tsv,4,grnboost2,1
 EOF
 
 # nes_threshold definido bem baixo apenas para este teste mecânico: como a
@@ -73,12 +73,12 @@ EOF
 # (2.5) de uma análise real. O objetivo aqui é confirmar que o comando
 # executa e grava a saída no formato correto com os arquivos oficiais, não
 # encontrar regulons biologicamente válidos.
-cat > artifacts/examples/ctx_smoke_test.csv <<EOF
+cat > artefatos/exemplos/ctx_smoke_test.csv <<EOF
 run_id,tf_name,adj_path,feather_path,tbl_path,loom_path,nes_threshold,mode,num_workers,output_path
-smoke_test,ALL,artifacts/examples/outs/smoke_test/adj_smoke_test.tsv,$FEATHER_PATH,$TBL_PATH,data/smoke_test.loom,0.0,dask_multiprocessing,4,artifacts/examples/outs/smoke_test/reg_smoke_test.csv
+smoke_test,ALL,artefatos/exemplos/outs/smoke_test/adj_smoke_test.tsv,$FEATHER_PATH,$TBL_PATH,data/smoke_test.loom,0.0,dask_multiprocessing,4,artefatos/exemplos/outs/smoke_test/reg_smoke_test.csv
 EOF
 
 echo
 echo "Concluído. Agora execute, nesta ordem:"
-echo "    bash scripts/run_pyscenic_grn.sh artifacts/examples/grn_smoke_test.csv"
-echo "    bash scripts/run_pyscenic_ctx.sh artifacts/examples/ctx_smoke_test.csv"
+echo "    bash scripts/run_pyscenic_grn.sh artefatos/exemplos/grn_smoke_test.csv"
+echo "    bash scripts/run_pyscenic_ctx.sh artefatos/exemplos/ctx_smoke_test.csv"

@@ -20,7 +20,7 @@ Este repositório utiliza o fluxo padrão de branches + Pull Request. A branch `
    ```bash
    shellcheck scripts/**/*.sh          # ou a extensão de shellcheck do seu editor
    ruff check .
-   bash -n scripts/**/*.sh references/*.sh   # verificação básica apenas de sintaxe
+   bash -n scripts/**/*.sh referencias/*.sh   # verificação básica apenas de sintaxe
    ```
 
 4. Envie as alterações e abra um PR contra a `main`:
@@ -43,7 +43,7 @@ Este repositório utiliza o fluxo padrão de branches + Pull Request. A branch `
 
 - Scripts Shell: use `set -uo pipefail` (não `-e`, caso um script processe linhas de forma independente e uma falha individual não deva derrubar toda a execução) e utilize as funções auxiliares de log e tratamento de erros já existentes em `scripts/lib/common.sh`, em vez de recriá-las.
 - Python: siga o `ruff.toml` (atualmente com as regras `E`, `F`, `B` e limite de 100 caracteres por linha). Execute `ruff check .` antes de realizar o push.
-- Nunca crie ou edite manualmente arquivos `configs/*.local.csv`/`artifacts/**/*.local.csv` — eles são gerados pelo `scripts/generate_configs.py`. Se precisar de um novo exemplo, adicione-o em `artifacts/examples/`.
+- Nunca crie ou edite manualmente arquivos `configs/*.local.csv`/`artefatos/**/*.local.csv` — eles são gerados pelo `scripts/generate_configs.py`. Se precisar de um novo exemplo, adicione-o em `artefatos/exemplos/`.
 - Não versione dados reais, credenciais ou caminhos absolutos específicos da sua máquina. Certifique-se de que o `.gitignore` contemple qualquer novo padrão de pastas ou arquivos exclusivamente locais que você adicionar.
 
 ## Dúvidas
