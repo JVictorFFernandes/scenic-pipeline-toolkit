@@ -1,10 +1,10 @@
-# Default owner for anything not matched below.
+# Responsável padrão para tudo que não corresponder abaixo.
 *                       @PLeonLopes @irlvinicius @JVictorFFernandes
 
-# Pipeline scripts and their tests:
+# Scripts do pipeline e seus testes:
 /scripts/               @PLeonLopes @irlvinicius @JVictorFFernandes
 /scripts/tests/         @PLeonLopes @irlvinicius @JVictorFFernandes
 
-# Install scripts and CI/governance config:
+# Scripts de instalação e configuração de CI/governança:
 /scripts/install/       @PLeonLopes @irlvinicius
 /.github/               @PLeonLopes @irlvinicius
